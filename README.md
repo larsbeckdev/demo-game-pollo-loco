@@ -1,59 +1,60 @@
-### 📟 Pokédex
+# 🐔 El Pollo Loco – Jump & Run Game
 
-**Category:** Database Pokémon  
-**Type:** ⚙️ Normal / 💾 Tech  
-**Ability:** *Complete Record*  
-**Region:** Digitalia
+Category: 🎮 Browser Game
+Type: 🕹️ Platformer
+Engine: HTML5 Canvas
+Framework: Vue 3 (UI Layer)
+Region: JavaScript Jungle 🌴
 
-> **Pokédex Entry:**  
-> Pokédex collects, organizes, and displays information about unknown creatures at high speed.  
-> It automatically updates its records when new data is discovered.  
-> Trainers rely on Pokédex to access structured and reliable knowledge at any time.
+## 📝 Project Description
 
-**Strengths:**  
-- High data processing capability  
-- Fast access to structured information  
-- Grows stronger with every new entry  
+El Pollo Loco is a 2D jump-and-run browser game built with HTML5 Canvas and structured using Vue 3 for UI and state management.
 
-**Weaknesses:**  
-- Becomes ineffective without a data source 📡  
+The player controls a character that jumps, collects items, defeats enemies, and fights a final boss.
 
-**Special Trait:**  
-The more complete its database, the more powerful Pokédex becomes.
+The project focuses on clean code architecture, object-oriented programming, and responsive gameplay for desktop and mobile devices (landscape mode).
 
----
+## 🎮 Features
+### 🏠 Landing Page
 
-## 🚀 Tech Stack
+Start Game button
 
-- **Vite** – fast dev server and build tool
-- **Vue 3** – UI components (Single File Components)
-- **ES Modules**
+Game explanation modal
 
-> Vite remains the build foundation – Vue is integrated via a plugin.
+Controls overview
 
----
+Responsive design
 
-https://github.com/partywhale/pokemon-type-icons
+Local embedded font
 
----
+Favicon included
 
-## 📦 Install
+### 🕹️ Gameplay
 
-```bash
-npm install
+Smooth character animations (idle, walk, jump, hurt, sleep)
 
-```
+Gravity & collision detection
 
-## 🧑‍💻 Development
+At least 2 enemy types + final boss
 
-```bash
-npm run dev
+Collectables (coins / bottles)
 
-```
+Health & status bars
 
-## 🏗️ Build
+Background music + sound effects
 
-```bash
-npm run build
+Mute button (state saved in LocalStorage)
 
-```
+Win / Game Over screen
+
+Restart without page reload
+
+### 📱 Mobile Support
+
+Landscape mode required
+
+Rotate-device overlay in portrait mode
+
+Touch controls visible only on mobile/tablet
+
+No scrollbars during gameplay
