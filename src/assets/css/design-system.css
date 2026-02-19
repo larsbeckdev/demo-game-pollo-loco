@@ -1,0 +1,101 @@
+/* Default = light */
+:root {
+  /* radii */
+  --ds-radius-sm: 8px;
+  --ds-radius-md: 10px;
+  --ds-radius-lg: 14px;
+  --ds-radius-xl: 18px;
+  --ds-radius-pill: 999px;
+
+  /* spacing */
+  --ds-space-xs: 6px;
+  --ds-space-sm: 10px;
+  --ds-space-md: 14px;
+  --ds-space-lg: 16px;
+  --ds-space-xl: 20px;
+  --ds-space-2xl: 28px;
+
+  /* font */
+  --ds-font-body: "Geist Variable", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --ds-font-heading: "Geist Variable", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --ds-font-size-sm: 12px;
+  --ds-font-size-md: 14px;
+  --ds-font-size-lg: 18px;
+  --ds-font-size-xl: 20px;
+  --ds-font-weight-regular: 400;
+  --ds-font-weight-semibold: 600;
+  --ds-font-weight-bold: 800;
+  --ds-font-weight-black: 900;
+
+  /* colors */
+  --ds-primary: #f97316;
+  --ds-primary-hover: #fb923c;
+  --ds-primary-pressed: #ea580c;
+
+  --ds-text: #020617;
+  --ds-text-muted: #334155;
+  --ds-text-disabled: #64748b;
+
+  --ds-body-bg: #f1f5f9;
+  --ds-card-bg: #ffffff;
+  --ds-card-bg-elevated: #f8fafc;
+  --ds-panel-bg: rgba(255,255,255,0.92);
+
+  --ds-border: #cbd5e1;
+  --ds-border-strong: #94a3b8;
+
+  --ds-overlay: rgba(2,6,23,0.40);
+  --ds-focus-ring: rgba(249,115,22,0.35);
+
+  --ds-type-chip-bg: rgba(2,6,23,0.04);
+  --ds-type-chip-border: rgba(2,6,23,0.10);
+
+  --ds-shadow-sm: 0 10px 28px rgba(2,6,23,0.10);
+  --ds-shadow-md: 0 20px 60px rgba(2,6,23,0.16);
+
+  --ds-card-gradient-to: rgba(2,6,23,0.04);
+
+  --ds-card-border: rgba(2,6,23,0.10);
+  --ds-card-border-hover: rgba(2,6,23,0.16);
+  --ds-card-shadow-hover: 0 14px 35px rgba(2,6,23,0.14);
+
+  --ds-img-drop-shadow: 0 10px 18px rgba(2,6,23,0.18);
+  --ds-img-drop-shadow-strong: 0 12px 28px rgba(2,6,23,0.22);
+}
+
+/* Dark mode: du kannst das via data-attr oder prefers-color-scheme steuern */
+:root[data-theme="dark"] {
+  --ds-primary: #f97316;
+  --ds-primary-hover: #fdba74;
+  --ds-primary-pressed: #c2410c;
+
+  --ds-text: #f1f5f9;
+  --ds-text-muted: #94a3b8;
+  --ds-text-disabled: #64748b;
+
+  --ds-body-bg: #0a0a0b;
+  --ds-card-bg: #141417;
+  --ds-card-bg-elevated: #1c1c21;
+  --ds-panel-bg: rgba(20,20,23,0.88);
+
+  --ds-border: #26262b;
+  --ds-border-strong: #3f3f46;
+
+  --ds-overlay: rgba(0,0,0,0.55);
+  --ds-focus-ring: rgba(249,115,22,0.45);
+
+  --ds-type-chip-bg: rgba(255,255,255,0.06);
+  --ds-type-chip-border: rgba(255,255,255,0.10);
+
+  --ds-shadow-sm: 0 10px 28px rgba(0,0,0,0.35);
+  --ds-shadow-md: 0 20px 60px rgba(0,0,0,0.45);
+
+  --ds-card-gradient-to: rgba(255,255,255,0.06);
+
+  --ds-card-border: rgba(255,255,255,0.12);
+  --ds-card-border-hover: rgba(255,255,255,0.20);
+  --ds-card-shadow-hover: 0 14px 35px rgba(0,0,0,0.25);
+
+  --ds-img-drop-shadow: 0 10px 18px rgba(0,0,0,0.35);
+  --ds-img-drop-shadow-strong: 0 12px 28px rgba(0,0,0,0.55);
+}
