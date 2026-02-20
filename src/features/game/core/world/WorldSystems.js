@@ -1,4 +1,4 @@
-import MovementSystem from "@/features/game/systems/MovementSystem.js";
+import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/CollisionSystem.js";
 
