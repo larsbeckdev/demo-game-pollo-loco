@@ -1,5 +1,5 @@
 // src/classes/systems/CollisionSystem.js
-import { aabb } from "../utils/aabb.js";
+import { aabb } from "@/features/game//utils/aabb.js";
 
 export default class CollisionSystem {
   constructor(world) {
