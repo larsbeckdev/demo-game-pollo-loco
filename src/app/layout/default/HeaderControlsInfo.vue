@@ -41,6 +41,14 @@
               secondary
               size="small"
               type="primary"
+              class="shift">
+              left SHIFT
+            </n-button>
+            <n-button
+              strong
+              secondary
+              size="small"
+              type="primary"
               class="space">
               SPACE
             </n-button>
