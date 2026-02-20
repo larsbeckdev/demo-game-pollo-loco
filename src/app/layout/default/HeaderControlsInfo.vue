@@ -136,7 +136,7 @@ const show = ref(false);
 }
 
 .key {
-  width: 48px;
+  width: 38px;
 }
 .shift {
   width: 90px;
