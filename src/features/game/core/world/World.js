@@ -1,5 +1,5 @@
 // src/classes/core/World.js
-import Character from "@/classes/entities/Character.js";
+import Character from "@/features/game/entities/character/Character.js";
 import Enemy from "@/classes/entities/Enemy.js";
 import { level1 } from "@/classes/levels/level1.js";
 
