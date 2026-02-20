@@ -18,7 +18,7 @@
 
         <div class="kbd">
           <div class="row center">
-            <n-button strong secondary size="small" type="primary" class="key"
+            <n-button strong secondary size="tiny" type="primary" class="key"
               >W</n-button
             >
           </div>
