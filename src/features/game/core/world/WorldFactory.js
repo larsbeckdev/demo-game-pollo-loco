@@ -1,4 +1,4 @@
-import Character from "@/features/game/entities/Character.js";
+import Character from "@/features/game/entities/character/Character.js";
 import Enemy from "@/features/game/entities/Enemy.js";
 
 export function createWorldState({ canvas, level }) {
