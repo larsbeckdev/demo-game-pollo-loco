@@ -34,9 +34,11 @@ export default class Character {
     this.facingDirection = 1;
     this.isOnGround = true;
 
-    this.jumpPhase = "none"; // none | crouch | rising | peak | falling | landing | standing
-    this.landingTimer = 0;
-    this.landingDuration = 10; // delta units (~0.16s bei 60fps, dt≈1)
+    // Jump phases: none, crouch, rising, peak, falling, landing, standing
+    this.jumpPrepTimer = 0; // short crouch before impulse
+    this.wasOnGroundLastFrame = true;
+    this.landingTimer = 0; // short land/stand display
+    this.landingDuration = 10; // dt-units (~0.16s)
 
     this.wasOnGroundLastFrame = true;
 
