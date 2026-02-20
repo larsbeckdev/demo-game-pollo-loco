@@ -22,9 +22,35 @@ export function createCharacterAnimations() {
     createNumberedFrameNames("W-", 21, 26),
   );
 
-  const jumpPaths = createFramePaths(
+  // Jump phases
+  const jumpPrepPaths = createFramePaths(
     `${basePath}/3_jump`,
-    createNumberedFrameNames("J-", 31, 39),
+    createNumberedFrameNames("J-", 31, 33),
+  );
+
+  const jumpRisePaths = createFramePaths(
+    `${basePath}/3_jump`,
+    createNumberedFrameNames("J-", 34, 34),
+  );
+
+  const jumpPeakPaths = createFramePaths(
+    `${basePath}/3_jump`,
+    createNumberedFrameNames("J-", 35, 36),
+  );
+
+  const jumpFallPaths = createFramePaths(
+    `${basePath}/3_jump`,
+    createNumberedFrameNames("J-", 37, 37),
+  );
+
+  const jumpLandPaths = createFramePaths(
+    `${basePath}/3_jump`,
+    createNumberedFrameNames("J-", 38, 38),
+  );
+
+  const jumpStandPaths = createFramePaths(
+    `${basePath}/3_jump`,
+    createNumberedFrameNames("J-", 39, 39),
   );
 
   const hurtPaths = createFramePaths(
@@ -41,8 +67,15 @@ export function createCharacterAnimations() {
     idle: new FrameAnimation(idlePaths, 10),
     longIdle: new FrameAnimation(longIdlePaths, 8),
     walk: new FrameAnimation(walkPaths, 14),
-    jump: new FrameAnimation(jumpPaths, 10),
-    fall: new FrameAnimation(jumpPaths, 10),
+
+    // NEW jump parts
+    jumpPrep: new FrameAnimation(jumpPrepPaths, 14),
+    jumpRise: new FrameAnimation(jumpRisePaths, 10),
+    jumpPeak: new FrameAnimation(jumpPeakPaths, 10),
+    jumpFall: new FrameAnimation(jumpFallPaths, 10),
+    jumpLand: new FrameAnimation(jumpLandPaths, 10),
+    jumpStand: new FrameAnimation(jumpStandPaths, 10),
+
     hurt: new FrameAnimation(hurtPaths, 12),
     dead: new FrameAnimation(deadPaths, 10),
   };
