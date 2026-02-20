@@ -1,11 +1,11 @@
 // src/classes/core/World.js
 import Character from "@/features/game/entities/character/Character.js";
-import Enemy from "@/classes/entities/Enemy.js";
-import { level1 } from "@/classes/levels/level1.js";
+import Enemy from "@/features/game/entities/enemy/Enemy.js";
+import { level1 } from "@/features/game/levels/level1.js";
 
-import MovementSystem from "@/classes/systems/MovementSystem.js";
-import ThrowSystem from "@/classes/systems/ThrowSystem.js";
-import CollisionSystem from "@/classes/systems/CollisionSystem.js";
+import MovementSystem from "@/features/game/systems/MovementSystem.js";
+import ThrowSystem from "@/features/game/systems/ThrowSystem.js";
+import CollisionSystem from "@/features/game/systems/CollisionSystem.js";
 
 export default class World {
   constructor({ canvas, camera, keyboard, level = level1 } = {}) {
