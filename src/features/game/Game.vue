@@ -20,7 +20,7 @@
 <script setup>
 // Vue imports
 import { ref, onMounted, onBeforeUnmount } from "vue"; // Vue lifecycle
-import Game from "@/classes/core/Game.js"; // Game class
+import Game from "@/features/game/core/Game.js"; // Game class
 import { Fullscreen } from "lucide-vue-next"; // Icon import
 
 // DOM references
