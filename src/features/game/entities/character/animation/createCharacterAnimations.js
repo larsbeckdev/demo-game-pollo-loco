@@ -7,69 +7,43 @@ import {
 export function createCharacterAnimations() {
   const basePath = "/images/2_character_pepe";
 
-  const jumpFolder = `${basePath}/3_jump`;
-
-  const jumpCrouchPaths = createFramePaths(
-    jumpFolder,
-    createNumberedFrameNames("J-", 31, 33),
+  const idlePaths = createFramePaths(
+    `${basePath}/1_idle/idle`,
+    createNumberedFrameNames("I-", 1, 10),
   );
 
-  const jumpUpPaths = createFramePaths(
-    jumpFolder,
-    createNumberedFrameNames("J-", 34, 34),
+  const longIdlePaths = createFramePaths(
+    `${basePath}/1_idle/long_idle`,
+    createNumberedFrameNames("I-", 11, 20),
   );
 
-  const jumpPeakPaths = createFramePaths(
-    jumpFolder,
-    createNumberedFrameNames("J-", 35, 36),
+  const walkPaths = createFramePaths(
+    `${basePath}/2_walk`,
+    createNumberedFrameNames("W-", 21, 26),
   );
 
-  const jumpFallPaths = createFramePaths(
-    jumpFolder,
-    createNumberedFrameNames("J-", 37, 37),
+  const jumpPaths = createFramePaths(
+    `${basePath}/3_jump`,
+    createNumberedFrameNames("J-", 31, 39),
   );
 
-  const jumpLandPaths = createFramePaths(
-    jumpFolder,
-    createNumberedFrameNames("J-", 38, 38),
+  const hurtPaths = createFramePaths(
+    `${basePath}/4_hurt`,
+    createNumberedFrameNames("H-", 41, 43),
   );
 
-  const jumpStandPaths = createFramePaths(
-    jumpFolder,
-    createNumberedFrameNames("J-", 39, 39),
+  const deadPaths = createFramePaths(
+    `${basePath}/5_dead`,
+    createNumberedFrameNames("D-", 51, 57),
   );
 
   return {
-    // ...deine anderen Animations (idle, walk, hurt, dead)
-
-    jumpCrouch: new FrameAnimation(jumpCrouchPaths, 12, {
-      shouldLoop: false,
-      shouldHoldLastFrame: true,
-    }),
-
-    jumpUp: new FrameAnimation(jumpUpPaths, 12, {
-      shouldLoop: false,
-      shouldHoldLastFrame: true,
-    }),
-
-    jumpPeak: new FrameAnimation(jumpPeakPaths, 10, {
-      shouldLoop: true,
-      shouldHoldLastFrame: false,
-    }),
-
-    jumpFall: new FrameAnimation(jumpFallPaths, 12, {
-      shouldLoop: false,
-      shouldHoldLastFrame: true,
-    }),
-
-    jumpLand: new FrameAnimation(jumpLandPaths, 12, {
-      shouldLoop: false,
-      shouldHoldLastFrame: true,
-    }),
-
-    jumpStand: new FrameAnimation(jumpStandPaths, 12, {
-      shouldLoop: false,
-      shouldHoldLastFrame: true,
-    }),
+    idle: new FrameAnimation(idlePaths, 10),
+    longIdle: new FrameAnimation(longIdlePaths, 8),
+    walk: new FrameAnimation(walkPaths, 14),
+    jump: new FrameAnimation(jumpPaths, 10),
+    fall: new FrameAnimation(jumpPaths, 10),
+    hurt: new FrameAnimation(hurtPaths, 12),
+    dead: new FrameAnimation(deadPaths, 10),
   };
 }
