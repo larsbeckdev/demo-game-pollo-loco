@@ -2,6 +2,7 @@
 import LogoSecondary from "@/components/logo/LogoSecondary.vue";
 import ThemeToggle from "@/features/theme-toggle/ThemeToggle.vue";
 import { Github } from "lucide-vue-next";
+import HeaderControlsInfo from "@/app/layout/default/HeaderControlsInfo.vue";
 </script>
 
 <template>
@@ -13,7 +14,9 @@ import { Github } from "lucide-vue-next";
     </div>
   </div>
 
-  <n-space>
+  <n-space class="header-controls items-center"  >
+    <HeaderControlsInfo />
+
     <n-button
       tertiary
       tag="a"
