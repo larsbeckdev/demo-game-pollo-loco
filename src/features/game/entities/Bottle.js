@@ -1,6 +1,4 @@
-// src/classes/entities/Bottle.js
-
-const BOTTLE_SRC = "./images/6_salsa_bottle/salsa_bottle.png"; // ggf. dein echter Pfad
+const BOTTLE_SRC = "./images/6_salsa_bottle/salsa_bottle.png";
 
 export default class Bottle {
   constructor({ x, y, direction, groundY, worldWidth }) {
@@ -39,7 +37,7 @@ export default class Bottle {
     this.vy = 0;
 
     // etwas tiefer setzen (Feinjustierung)
-    this.y = this.groundY + 12; 
+    this.y = this.groundY + 12;
   }
 
   update(dt) {
