@@ -52,8 +52,8 @@ export default class Character {
   constructor({
     x = 60,
     groundY = 360, // y ist "Fußpunkt"
-    width = 90,
-    height = 180,
+    width = 80,
+    height = 160,
   } = {}) {
     // World Pos
     this.x = x;
