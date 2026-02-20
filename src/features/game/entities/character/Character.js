@@ -130,7 +130,7 @@ export default class Character {
    *   height?: number
    * }} opts
    */
-  constructor({ x = 120, groundY = 380, width = 90, height = 140 } = {}) {
+  constructor({ x = 80, groundY = 350, width = 90, height = 140 } = {}) {
     // -----------------------------
     // World position
     // -----------------------------
