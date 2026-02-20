@@ -40,6 +40,8 @@ export function createCharacterAnimations() {
   );
 
   return {
+    // ...deine anderen Animations (idle, walk, hurt, dead)
+
     jumpCrouch: new FrameAnimation(jumpCrouchPaths, 12, {
       shouldLoop: false,
       shouldHoldLastFrame: true,
