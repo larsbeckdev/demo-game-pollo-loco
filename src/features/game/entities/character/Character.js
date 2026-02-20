@@ -51,7 +51,7 @@ class FrameAnimation {
 export default class Character {
   constructor({
     x = 120,
-    groundY = 270, // y ist "Fußpunkt"
+    groundY = 270 - 40, // y ist "Fußpunkt"
     width = 90,
     height = 140,
   } = {}) {
