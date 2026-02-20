@@ -21,7 +21,9 @@ export function handleCharacterInput(character, keyboard) {
 
 function attemptJump(character) {
   if (!character.isOnGround) return;
+  if (character.isDead) return;
+  if (character.isHurt) return;
 
-  character.isOnGround = false;
-  character.verticalVelocity = -character.jumpStrength;
+  character.jumpPhase = "crouch";
+  character.animations.jumpCrouch.reset();
 }
