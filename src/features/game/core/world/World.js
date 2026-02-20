@@ -1,12 +1,9 @@
-import Character from "@/features/game/entities/Character.js";
-import Enemy from "@/features/game/entities/Enemy.js";
 import { level1 } from "@/features/game/levels/level1.js";
+import { createWorldState } from "./WorldFactory.js";
+import { createWorldSystems } from "./WorldSystems.js";
+import { drawWorld } from "./WorldDraw.js";
 
-import MovementSystem from "@/features/game/systems/MovementSystem.js";
-import ThrowSystem from "@/features/game/systems/ThrowSystem.js";
-import CollisionSystem from "@/features/game/systems/CollisionSystem.js";
-
-// WORLD
+// Owns entities + systems, provides update() + draw()
 export default class World {
   constructor({ canvas, camera, keyboard, level = level1 } = {}) {
     this.canvas = canvas;
@@ -14,42 +11,16 @@ export default class World {
     this.keyboard = keyboard;
     this.level = level;
 
-    // Ground setup
-    this.groundY = this.canvas.height - (this.level.groundOffset ?? 40);
-
-    // Player
-    this.character = new Character({ groundY: this.groundY });
-
-    // Entities
-    this.enemies = [new Enemy({ x: 600, groundY: this.groundY, scale: 0.5 })];
-    this.collectables = [];
-    this.bottles = [];
-
-    // World size
-    this.worldWidth = this.level.worldWidth ?? 4000;
-
-    // Systems
-    this.movementSystem = new MovementSystem(this);
-    this.throwSystem = new ThrowSystem(this);
-    this.collisionSystem = new CollisionSystem(this);
+    Object.assign(this, createWorldState({ canvas, level }));
+    this.systems = createWorldSystems(this);
   }
 
   update(dt) {
-    // Reihenfolge ist wichtig:
-    // 1) Movement (Input/Player/Kamera)
-    this.movementSystem.update(dt);
-
-    // 2) Throw (Bottles erzeugen + Bottles updaten)
-    this.throwSystem.update(dt);
-
-    // 3) Collisions + Enemies update
-    this.collisionSystem.update(dt);
+    // Order matters: Movement -> Throw -> Collision (same as before)
+    for (const sys of this.systems) sys.update(dt);
   }
 
   draw(ctx) {
-    this.character.draw(ctx, this.camera.x);
-
-    for (const enemy of this.enemies) enemy.draw(ctx, this.camera.x);
-    for (const bottle of this.bottles) bottle.draw(ctx, this.camera.x);
+    drawWorld(this, ctx);
   }
 }
