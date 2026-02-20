@@ -12,8 +12,8 @@ import { applyLegacyCharacterInterface } from "./compatibility/characterLegacyAd
 
 export default class Character {
   constructor({
-    initialX = 120,
-    groundLevel = 380,
+    initialX = 80,
+    groundLevel = 400,
     width = 90,
     height = 140,
   } = {}) {
