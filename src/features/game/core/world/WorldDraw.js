@@ -1,11 +1,9 @@
-import MovementSystem from "@/features/game/systems/MovementSystem.js";
-import ThrowSystem from "@/features/game/systems/ThrowSystem.js";
-import CollisionSystem from "@/features/game/systems/CollisionSystem.js";
+// Keeps draw order in one place
+export function drawWorld(world, ctx) {
+  const camX = world.camera.x;
 
-export function createWorldSystems(world) {
-  return [
-    new MovementSystem(world),
-    new ThrowSystem(world),
-    new CollisionSystem(world),
-  ];
+  world.character.draw(ctx, camX);
+
+  for (const e of world.enemies) e.draw(ctx, camX);
+  for (const b of world.bottles) b.draw(ctx, camX);
 }
