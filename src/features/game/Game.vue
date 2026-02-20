@@ -1,3 +1,38 @@
+<script setup>
+// Vue imports
+import { ref, onMounted, onBeforeUnmount } from "vue"; // Vue lifecycle
+// import { createGame } from "@/classes/core/createGame.js";
+import { Fullscreen } from "lucide-vue-next"; // Icon import
+
+// DOM references
+// const wrap = ref(null); // Wrapper ref
+// const canvas = ref(null);
+// let game;
+
+// Toggle fullscreen
+function toggleFullscreen() {
+  const el = wrap.value; // Get wrapper
+  if (!document.fullscreenElement)
+    el.requestFullscreen(); // Enter fullscreen
+  else document.exitFullscreen(); // Exit fullscreen
+}
+
+// Mount lifecycle
+onMounted(async () => {
+  const c = canvas.value;
+  c.width = 800;
+  c.height = 450;
+
+  game = await createGame(c);
+  game.start();
+});
+
+// Cleanup lifecycle
+onBeforeUnmount(() => {
+  game?.stop();
+});
+</script>
+
 <template>
   <!-- Game container -->
   <div ref="wrap" class="game-wrap">
@@ -16,41 +51,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-// Vue imports
-import { ref, onMounted, onBeforeUnmount } from "vue"; // Vue lifecycle
-import Game from "@/classes/core/Game.js"; // Game class
-import { Fullscreen } from "lucide-vue-next"; // Icon import
-
-// DOM references
-const wrap = ref(null); // Wrapper ref
-const canvas = ref(null); // Canvas ref
-let game; // Game instance
-
-// Toggle fullscreen
-function toggleFullscreen() {
-  const el = wrap.value; // Get wrapper
-  if (!document.fullscreenElement)
-    el.requestFullscreen(); // Enter fullscreen
-  else document.exitFullscreen(); // Exit fullscreen
-}
-
-// Mount lifecycle
-onMounted(() => {
-  const c = canvas.value; // Canvas element
-  c.width = 800; // Set width
-  c.height = 450; // Set height
-
-  game = new Game(c); // Create game
-  game.start(); // Start loop
-});
-
-// Cleanup lifecycle
-onBeforeUnmount(() => {
-  game?.stop(); // Stop loop
-});
-</script>
 
 <style scoped>
 /* Wrapper styles */
