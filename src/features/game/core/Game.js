@@ -1,8 +1,7 @@
 import Background from "@/classes/rendering/Background.js"; // Background renderer
-import Camera from "@/classes/rendering/Camera.js"; // Camera system
-import Keyboard from "./Keyboard.js"; // Input handler
-import FullscreenButton from "./FullscreenButton.js";
-import World from "./World.js"; // Game world
+import Camera from "@/features/game/rendering/Camera.js"; // Camera system
+import Keyboard from "./input/Keyboard.js"; // Input handler
+import World from "./world/World.js"; // Game world
 
 export default class Game {
   constructor(canvas) {
@@ -16,9 +15,6 @@ export default class Game {
     this.camera = new Camera(); // Create camera
 
     this.keyboard = new Keyboard(); // Create keyboard
-
-    // Fullscreen Button
-    // this.fullscreenButton = new FullscreenButton(canvas);
 
     this.world = new World({
       canvas: this.canvas, // Pass canvas
