@@ -8,6 +8,8 @@ import {
 } from "./logic/handleCharacterHealth.js";
 import { drawCharacter } from "./rendering/drawCharacter.js";
 
+import { applyLegacyCharacterInterface } from "./compatibility/characterLegacyAdapter.js";
+
 export default class Character {
   constructor({
     initialX = 120,
@@ -83,100 +85,6 @@ export default class Character {
   draw(canvasContext, cameraOffsetX = 0) {
     drawCharacter(this, canvasContext, cameraOffsetX);
   }
-
-  // ------------------------------------------------------------
-  // Compatibility layer: keep old property names working
-  // so existing World/Systems code still draws and moves correctly
-  // ------------------------------------------------------------
-
-  get x() {
-    return this.positionX;
-  }
-  set x(value) {
-    this.positionX = value;
-  }
-
-  get y() {
-    return this.positionY;
-  }
-  set y(value) {
-    this.positionY = value;
-  }
-
-  get w() {
-    return this.width;
-  }
-  set w(value) {
-    this.width = value;
-  }
-
-  get h() {
-    return this.height;
-  }
-  set h(value) {
-    this.height = value;
-  }
-
-  get vx() {
-    return this.horizontalVelocity;
-  }
-  set vx(value) {
-    this.horizontalVelocity = value;
-  }
-
-  get vy() {
-    return this.verticalVelocity;
-  }
-  set vy(value) {
-    this.verticalVelocity = value;
-  }
-
-  get facing() {
-    return this.facingDirection;
-  }
-  set facing(value) {
-    this.facingDirection = value;
-  }
-
-  get onGround() {
-    return this.isOnGround;
-  }
-  set onGround(value) {
-    this.isOnGround = value;
-  }
-
-  get dead() {
-    return this.isDead;
-  }
-  set dead(value) {
-    this.isDead = value;
-  }
-
-  get hurtActive() {
-    return this.isHurt;
-  }
-  set hurtActive(value) {
-    this.isHurt = value;
-  }
-
-  get anims() {
-    return this.animations;
-  }
-  set anims(value) {
-    this.animations = value;
-  }
-
-  get currentAnimKey() {
-    return this.currentAnimationKey;
-  }
-  set currentAnimKey(value) {
-    this.currentAnimationKey = value;a
-  }
-
-  get groundY() {
-    return this.groundLevel;
-  }
-  set groundY(value) {
-    this.groundLevel = value;
-  }
 }
+
+applyLegacyCharacterInterface(Character);
