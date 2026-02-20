@@ -1,12 +1,29 @@
+/* =========================================================
+ * 🧩 Animation Helper Functions
+ * ======================================================= */
+
+/**
+ * Builds full frame paths from base path + filenames
+ */
 function makeFramePaths(base, names) {
   return names.map((n) => `${base}/${n}`);
 }
 
+/**
+ * Generates filenames like prefix1.png → prefixX.png
+ */
 function rangeFrames(prefix, from, to) {
   const arr = [];
-  for (let i = from; i <= to; i++) arr.push(`${prefix}${i}.png`);
+  for (let i = from; i <= to; i++) {
+    arr.push(`${prefix}${i}.png`);
+  }
   return arr;
 }
+
+/* =========================================================
+ * 🎞 FrameAnimation
+ * Handles sprite animation timing
+ * ======================================================= */
 
 class FrameAnimation {
   constructor(paths, fps = 12) {
@@ -29,7 +46,7 @@ class FrameAnimation {
   }
 
   update(dt) {
-    const frameTime = 60 / this.fps; // in "dt units"
+    const frameTime = 60 / this.fps; // dt based (60fps reference)
     this.acc += dt;
 
     while (this.acc >= frameTime) {
@@ -48,33 +65,41 @@ class FrameAnimation {
   }
 }
 
+/* =========================================================
+ * 🧍 Character
+ * Player entity with physics, state machine & animations
+ * ======================================================= */
+
 export default class Character {
-  constructor({
-    x = 120,
-    groundY = 270 - 40, // y ist "Fußpunkt"
-    width = 90,
-    height = 140,
-  } = {}) {
-    // World Pos
+  constructor({ x = 120, groundY = 270 - 40, width = 90, height = 140 } = {}) {
+    /* -----------------------------
+     * 📍 World Position
+     * --------------------------- */
     this.x = x;
     this.y = groundY;
     this.groundY = groundY;
 
-    // Size
+    /* -----------------------------
+     * 📏 Size
+     * --------------------------- */
     this.w = width;
     this.h = height;
 
-    // Motion
+    /* -----------------------------
+     * 🧮 Physics / Movement
+     * --------------------------- */
     this.vx = 0;
     this.vy = 0;
     this.speed = 4.8;
     this.jumpForce = 14;
     this.gravity = 0.9;
 
-    this.facing = 1; // 1 right, -1 left
+    this.facing = 1;
     this.onGround = true;
 
-    // Health System
+    /* -----------------------------
+     * ❤️ Health System
+     * --------------------------- */
     this.maxHp = 3;
     this.hp = 3;
 
@@ -86,14 +111,18 @@ export default class Character {
 
     this.hurtActive = false;
     this.hurtTimer = 0;
-    this.hurtDuration = 24; // ~0.4s bei 60fps (dt≈1)
+    this.hurtDuration = 24;
 
-    // State
-    this.state = "idle"; // idle | long_idle | walk | jump | fall
-    this.idleTimer = 0; // für long idle trigger
-    this.longIdleAfter = 180; // ~3s bei 60fps (dt=1)
+    /* -----------------------------
+     * 🎭 State Machine
+     * --------------------------- */
+    this.state = "idle";
+    this.idleTimer = 0;
+    this.longIdleAfter = 180;
 
-    // --- Animation setup (PUBLIC paths!)
+    /* -----------------------------
+     * 🎞 Animations
+     * --------------------------- */
     const base = "/images/2_character_pepe";
 
     const idlePaths = makeFramePaths(
@@ -115,6 +144,7 @@ export default class Character {
       `${base}/3_jump`,
       rangeFrames("J-", 31, 39),
     );
+
     const hurtPaths = makeFramePaths(
       `${base}/4_hurt`,
       rangeFrames("H-", 41, 43),
@@ -138,9 +168,12 @@ export default class Character {
     this.currentAnimKey = "idle";
   }
 
+  /* =========================================================
+   * 🎮 Input
+   * ======================================================= */
+
   handleInput(keyboard) {
-    if (this.dead) return;
-    if (this.hurtActive) return;
+    if (this.dead || this.hurtActive) return;
 
     this.vx = 0;
 
@@ -148,11 +181,15 @@ export default class Character {
       this.vx = -this.speed;
       this.facing = -1;
     }
+
     if (keyboard?.RIGHT) {
       this.vx = this.speed;
       this.facing = 1;
     }
-    if (keyboard?.JUMP) this.jump();
+
+    if (keyboard?.JUMP) {
+      this.jump();
+    }
   }
 
   jump() {
@@ -160,6 +197,10 @@ export default class Character {
     this.onGround = false;
     this.vy = -this.jumpForce;
   }
+
+  /* =========================================================
+   * 🔄 Animation Control
+   * ======================================================= */
 
   setAnim(key) {
     if (this.currentAnimKey === key) return;
@@ -175,15 +216,19 @@ export default class Character {
     }
   }
 
+  /* =========================================================
+   * 🔁 Update Loop
+   * ======================================================= */
+
   update(dt = 1) {
-    // Move X
+    // Movement X
     this.x += this.vx * dt;
 
     // Gravity
     this.vy += this.gravity * dt;
     this.y += this.vy * dt;
 
-    // Ground
+    // Ground Check
     if (this.y >= this.groundY) {
       this.y = this.groundY;
       this.vy = 0;
@@ -192,18 +237,18 @@ export default class Character {
       this.onGround = false;
     }
 
-    // --- State priority: dead > hurt > movement
+    // State Priority
     if (this.dead) {
       this.state = "dead";
     } else if (this.hurtActive) {
       this.state = "hurt";
       this.hurtTimer -= dt;
+
       if (this.hurtTimer <= 0) {
         this.hurtActive = false;
         this.hurtTimer = 0;
       }
     } else {
-      // normal states
       if (!this.onGround) {
         this.idleTimer = 0;
         this.state = this.vy < 0 ? "jump" : "fall";
@@ -220,46 +265,46 @@ export default class Character {
     this.setAnim(this.state);
     this.anims[this.currentAnimKey].update(dt);
 
-    // Invincibility Timer
+    // Invincibility
     if (this.invincible) {
       this.invincibleTimer -= dt;
+
       if (this.invincibleTimer <= 0) {
-        this.invincibleTimer = 0;
         this.invincible = false;
+        this.invincibleTimer = 0;
       }
     }
   }
 
+  /* =========================================================
+   * 💥 Damage
+   * ======================================================= */
+
   takeDamage() {
-    if (this.dead) return;
-    if (this.invincible) return;
+    if (this.dead || this.invincible) return;
 
     this.hp--;
 
-    // iFrames
     this.invincible = true;
     this.invincibleTimer = this.invincibleDuration;
 
-    // hurt animation trigger
     this.hurtActive = true;
     this.hurtTimer = this.hurtDuration;
 
-    // optional: kleiner knockback
     this.vx = 0;
-
-    // TODO vor Abgabe entfernen:
-    console.log("HP:", this.hp);
 
     if (this.hp <= 0) {
       this.dead = true;
       this.hurtActive = false;
       this.hurtTimer = 0;
-
-      // Bewegung stoppen
       this.vx = 0;
       this.vy = 0;
     }
   }
+
+  /* =========================================================
+   * 🎨 Rendering
+   * ======================================================= */
 
   draw(ctx, cameraX = 0) {
     const anim = this.anims[this.currentAnimKey];
@@ -268,17 +313,14 @@ export default class Character {
     const screenX = this.x - cameraX;
     const drawY = this.y - this.h;
 
-    // Blinken bei Invincibility
     if (this.hurtActive && !this.dead) {
       if (Math.floor(this.hurtTimer / 3) % 2 === 0) return;
     }
 
-    // Wenn noch nicht geladen: simple placeholder
     if (!anim.ready) return;
 
     ctx.save();
 
-    // Flip bei facing left
     if (this.facing === -1) {
       ctx.translate(screenX + this.w, 0);
       ctx.scale(-1, 1);
@@ -290,7 +332,16 @@ export default class Character {
     ctx.restore();
   }
 
+  /* =========================================================
+   * 📦 Collision Bounds
+   * ======================================================= */
+
   getBounds() {
-    return { x: this.x, y: this.y - this.h, w: this.w, h: this.h };
+    return {
+      x: this.x,
+      y: this.y - this.h,
+      w: this.w,
+      h: this.h,
+    };
   }
 }
