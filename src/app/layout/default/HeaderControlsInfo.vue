@@ -127,16 +127,17 @@ const show = ref(false);
 .key,
 .shift,
 .space {
-  height: 38px;
+  height: 28px;
   font-weight: 600;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
 }
 
 .key {
-  width: 38px;
+  width: 28px;
 }
 .shift {
   width: 90px;
