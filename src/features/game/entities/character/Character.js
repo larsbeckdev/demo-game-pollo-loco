@@ -53,6 +53,15 @@ export default class Character {
     this.currentAnimationKey = "idle";
   }
 
+  getBounds() {
+    return {
+      x: this.positionX,
+      y: this.positionY - this.height,
+      w: this.width,
+      h: this.height,
+    };
+  }
+
   handleInput(keyboard) {
     handleCharacterInput(this, keyboard);
   }
