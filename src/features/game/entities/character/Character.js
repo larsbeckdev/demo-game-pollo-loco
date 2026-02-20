@@ -98,6 +98,17 @@ export default class Character {
     this.gravity = 0.9;
     this.onGround = true;
 
+    // --- health / damage ---
+    this.maxHp = 100;
+    this.hp = this.maxHp;
+
+    // invincibility frames after hit (ms)
+    this.invincibleUntil = 0;
+
+    // optional: knockback tuning
+    this.knockbackX = 6;
+    this.knockbackY = 7;
+
     // direction
     this.facing = 1; // 1 right, -1 left
 
