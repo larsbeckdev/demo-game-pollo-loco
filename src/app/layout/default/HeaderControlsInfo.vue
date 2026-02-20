@@ -24,13 +24,13 @@
           </div>
 
           <div class="row">
-            <n-button strong secondary size="small" type="primary" class="key"
+            <n-button strong secondary size="tiny" type="primary" class="key"
               >A</n-button
             >
-            <n-button strong secondary size="small" type="primary" class="key"
+            <n-button strong secondary size="tiny" type="primary" class="key"
               >S</n-button
             >
-            <n-button strong secondary size="small" type="primary" class="key"
+            <n-button strong secondary size="tiny" type="primary" class="key"
               >D</n-button
             >
           </div>
@@ -39,7 +39,7 @@
             <n-button
               strong
               secondary
-              size="small"
+              size="tiny"
               type="primary"
               class="shift">
               SHIFT
@@ -47,7 +47,7 @@
             <n-button
               strong
               secondary
-              size="small"
+              size="tiny"
               type="primary"
               class="space">
               SPACE
@@ -62,17 +62,17 @@
 
         <div class="kbd">
           <div class="row center">
-            <n-button size="small" type="primary" class="key">W</n-button>
+            <n-button size="tiny" type="primary" class="key">W</n-button>
           </div>
 
           <div class="row">
-            <n-button size="small" type="primary" class="key">A</n-button>
-            <n-button size="small" type="primary" class="key">S</n-button>
-            <n-button size="small" type="primary" class="key">D</n-button>
+            <n-button size="tiny" type="primary" class="key">A</n-button>
+            <n-button size="tiny" type="primary" class="key">S</n-button>
+            <n-button size="tiny" type="primary" class="key">D</n-button>
           </div>
 
           <div class="row">
-            <n-button size="small" type="primary" class="space">
+            <n-button size="tiny" type="primary" class="space">
               SPACE
             </n-button>
           </div>
