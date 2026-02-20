@@ -71,7 +71,7 @@ class FrameAnimation {
  * ======================================================= */
 
 export default class Character {
-  constructor({ x = 120, groundY = 270 - 40, width = 90, height = 140 } = {}) {
+  constructor({ x = 70, groundY = 270 - 40, width = 90, height = 140 } = {}) {
     /* -----------------------------
      * World Position
      * --------------------------- */
