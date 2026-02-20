@@ -1,7 +1,10 @@
 export default class FrameAnimation {
-  constructor(framePaths, framesPerSecond = 12) {
+  constructor(framePaths, framesPerSecond = 12, options = {}) {
     this.framePaths = framePaths;
     this.framesPerSecond = framesPerSecond;
+
+    this.shouldLoop = options.shouldLoop ?? true;
+    this.shouldHoldLastFrame = options.shouldHoldLastFrame ?? false;
 
     this.images = framePaths.map((path) => {
       const image = new Image();
@@ -11,23 +14,39 @@ export default class FrameAnimation {
 
     this.currentFrameIndex = 0;
     this.accumulatedTime = 0;
+    this.isFinished = false;
   }
 
   reset() {
     this.currentFrameIndex = 0;
     this.accumulatedTime = 0;
+    this.isFinished = false;
   }
 
   update(deltaTime) {
-    const framesPerSecondAt60Fps = 60 / this.framesPerSecond;
+    if (this.isFinished) return;
 
+    const frameDurationInDeltaUnits = 60 / this.framesPerSecond;
     this.accumulatedTime += deltaTime;
 
-    while (this.accumulatedTime >= framesPerSecondAt60Fps) {
-      this.accumulatedTime -= framesPerSecondAt60Fps;
+    while (this.accumulatedTime >= frameDurationInDeltaUnits) {
+      this.accumulatedTime -= frameDurationInDeltaUnits;
 
-      this.currentFrameIndex =
-        (this.currentFrameIndex + 1) % this.images.length;
+      const lastFrameIndex = this.images.length - 1;
+
+      if (this.currentFrameIndex >= lastFrameIndex) {
+        if (this.shouldLoop) {
+          this.currentFrameIndex = 0;
+        } else if (this.shouldHoldLastFrame) {
+          this.currentFrameIndex = lastFrameIndex;
+          this.isFinished = true;
+        } else {
+          this.currentFrameIndex = lastFrameIndex;
+          this.isFinished = true;
+        }
+      } else {
+        this.currentFrameIndex += 1;
+      }
     }
   }
 
