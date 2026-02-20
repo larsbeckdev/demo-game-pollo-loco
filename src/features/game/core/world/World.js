@@ -3,9 +3,9 @@ import Character from "@/features/game/entities/character/Character.js";
 import Enemy from "@/features/game/entities/enemy/Enemy.js";
 import { level1 } from "@/features/game/levels/level1.js";
 
-import MovementSystem from "@/features/game/systems/MovementSystem.js";
-import ThrowSystem from "@/features/game/systems/ThrowSystem.js";
-import CollisionSystem from "@/features/game/systems/CollisionSystem.js";
+import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
+import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
+import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
 
 export default class World {
   constructor({ canvas, camera, keyboard, level = level1 } = {}) {
