@@ -42,7 +42,7 @@
               size="small"
               type="primary"
               class="shift">
-              left SHIFT
+              SHIFT
             </n-button>
             <n-button
               strong
