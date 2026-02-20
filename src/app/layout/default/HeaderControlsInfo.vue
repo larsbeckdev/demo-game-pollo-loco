@@ -124,36 +124,25 @@ const show = ref(false);
   justify-content: center;
 }
 
+.key,
+.shift,
+.space {
+  height: 38px;
+  font-weight: 600;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .key {
   width: 48px;
-  height: 48px;
-  font-weight: 600;
-  padding: 0; /* wichtig */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
-
-/* SHIFT etwas breiter */
 .shift {
   width: 90px;
-  height: 48px;
-  font-weight: 600;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
-
-/* SPACE deutlich breiter */
 .space {
   width: 180px;
-  height: 48px;
-  font-weight: 600;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* Visibility toggles */
