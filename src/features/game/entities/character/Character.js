@@ -66,27 +66,27 @@ class FrameAnimation {
 }
 
 /* =========================================================
- * 🧍 Character
+ * Character
  * Player entity with physics, state machine & animations
  * ======================================================= */
 
 export default class Character {
   constructor({ x = 120, groundY = 270 - 40, width = 90, height = 140 } = {}) {
     /* -----------------------------
-     * 📍 World Position
+     * World Position
      * --------------------------- */
     this.x = x;
     this.y = groundY;
     this.groundY = groundY;
 
     /* -----------------------------
-     * 📏 Size
+     * Size
      * --------------------------- */
     this.w = width;
     this.h = height;
 
     /* -----------------------------
-     * 🧮 Physics / Movement
+     * Physics / Movement
      * --------------------------- */
     this.vx = 0;
     this.vy = 0;
@@ -98,7 +98,7 @@ export default class Character {
     this.onGround = true;
 
     /* -----------------------------
-     * ❤️ Health System
+     * Health System
      * --------------------------- */
     this.maxHp = 3;
     this.hp = 3;
@@ -114,14 +114,14 @@ export default class Character {
     this.hurtDuration = 24;
 
     /* -----------------------------
-     * 🎭 State Machine
+     * State Machine
      * --------------------------- */
     this.state = "idle";
     this.idleTimer = 0;
     this.longIdleAfter = 180;
 
     /* -----------------------------
-     * 🎞 Animations
+     * Animations
      * --------------------------- */
     const base = "/images/2_character_pepe";
 
