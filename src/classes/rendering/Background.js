@@ -1,4 +1,4 @@
-import ParallaxLayer from "./ParallaxLayer.js";
+import ParallaxLayer from "@/classes/rendering/ParallaxLayer.js";
 
 export default class Background {
   constructor() {
