@@ -170,7 +170,7 @@ export default class Character {
     return this.currentAnimationKey;
   }
   set currentAnimKey(value) {
-    this.currentAnimationKey = value;
+    this.currentAnimationKey = value;a
   }
 
   get groundY() {
