@@ -8,33 +8,64 @@ function rangeFrames(prefix, from, to) {
   return arr;
 }
 
+/**
+ * dt is expected like you already use it:
+ * dt ~= 1 at ~60fps (i.e. "frames" not seconds)
+ */
 class FrameAnimation {
-  constructor(paths, fps = 10) {
+  constructor(
+    paths,
+    fps = 10,
+    { loop = true, holdLast = false } = {}, // ✅ control looping / last frame
+  ) {
     this.images = paths.map((src) => {
       const img = new Image();
       img.src = src;
       return img;
     });
 
+    this.fps = fps;
+    this.loop = loop;
+    this.holdLast = holdLast;
+
     this.frame = 0;
     this.acc = 0;
 
-    // dt≈1 bei 60fps => so wie du es schon hattest
+    // dt≈1 at 60fps => frameTime is in "dt units"
     this.frameTime = 60 / fps;
+
+    this.finished = false;
   }
 
   reset() {
     this.frame = 0;
     this.acc = 0;
+    this.finished = false;
   }
 
   update(dt) {
     if (!this.images.length) return;
+    if (this.finished) return;
 
     this.acc += dt;
-    if (this.acc >= this.frameTime) {
-      this.acc = 0;
-      this.frame = (this.frame + 1) % this.images.length;
+
+    // ✅ keep remainder (no speed spikes / no "too fast" feel)
+    while (this.acc >= this.frameTime) {
+      this.acc -= this.frameTime;
+
+      const next = this.frame + 1;
+
+      if (next >= this.images.length) {
+        if (this.loop) {
+          this.frame = 0;
+        } else {
+          this.finished = true;
+          this.frame = this.holdLast ? this.images.length - 1 : 0;
+          break;
+        }
+      } else {
+        this.frame = next;
+      }
     }
   }
 
@@ -74,6 +105,9 @@ export default class Character {
     this.state = "idle";
     this.currentAnimKey = "idle";
 
+    // ✅ prevent jump spam when holding the key
+    this.jumpHeld = false;
+
     // animations
     const base = "/images/2_character_pepe";
 
@@ -93,9 +127,11 @@ export default class Character {
     );
 
     this.anims = {
-      idle: new FrameAnimation(idlePaths, 10),
-      walk: new FrameAnimation(walkPaths, 14),
-      jump: new FrameAnimation(jumpPaths, 10),
+      idle: new FrameAnimation(idlePaths, 10, { loop: true }),
+      walk: new FrameAnimation(walkPaths, 14, { loop: true }),
+
+      // ✅ jump should NOT loop; keep last frame until you land
+      jump: new FrameAnimation(jumpPaths, 10, { loop: false, holdLast: true }),
     };
   }
 
@@ -110,19 +146,25 @@ export default class Character {
       this.facing = 1;
     }
 
-    if (keyboard?.JUMP) this.jump();
+    // ✅ jump only on "press", not while held
+    const jumpNow = !!keyboard?.JUMP;
+    if (jumpNow && !this.jumpHeld) this.jump();
+    this.jumpHeld = jumpNow;
   }
 
   jump() {
     if (!this.onGround) return;
     this.onGround = false;
     this.vy = -this.jumpForce;
+
+    // ✅ ensure jump animation starts immediately when you jump
+    this.setAnim("jump");
   }
 
   setAnim(key) {
     if (this.currentAnimKey === key) return;
     this.currentAnimKey = key;
-    this.anims[key].reset(); // immer reset -> simpel
+    this.anims[key]?.reset();
   }
 
   update(dt = 1) {
@@ -142,7 +184,7 @@ export default class Character {
       this.onGround = false;
     }
 
-    // state (nur 3)
+    // state (only 3)
     if (!this.onGround) this.state = "jump";
     else if (Math.abs(this.vx) > 0.01) this.state = "walk";
     else this.state = "idle";
@@ -153,7 +195,7 @@ export default class Character {
 
   draw(ctx, cameraX = 0) {
     const anim = this.anims[this.currentAnimKey];
-    if (!anim.ready) return;
+    if (!anim?.ready) return;
 
     const img = anim.image;
     const screenX = this.x - cameraX;
