@@ -34,6 +34,12 @@ export default class Character {
     this.facingDirection = 1;
     this.isOnGround = true;
 
+    this.jumpPhase = "none"; // none | crouch | rising | peak | falling | landing | standing
+    this.landingTimer = 0;
+    this.landingDuration = 10; // delta units (~0.16s bei 60fps, dt≈1)
+
+    this.wasOnGroundLastFrame = true;
+
     this.maxHealthPoints = 3;
     this.healthPoints = 3;
 
