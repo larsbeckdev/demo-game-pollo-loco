@@ -179,8 +179,8 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: end center; /* unten mittig */
-  padding: 18px;
+  place-items: center; /* unten mittig */
+  /* padding: 18px; */
 }
 
 /* ✅ Optional: Lesbarkeit unten verbessern */
