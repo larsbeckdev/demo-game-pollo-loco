@@ -1,22 +1,23 @@
-import ThrowInput from "./ThrowInput.js";
-import spawnBottle from "./spawnBottle.js";
-import updateBottles from "./updateBottles.js";
+import ThrowInputSystem from "./ThrowInputSystem.js";
+import BottleSpawnSystem from "./BottleSpawnSystem.js";
+import BottleUpdateSystem from "./BottleUpdateSystem.js";
 
 export default class ThrowSystem {
   constructor(world) {
     this.world = world;
-    this.input = new ThrowInput();
+
+    this.input = new ThrowInputSystem(world);
+    this.spawn = new BottleSpawnSystem(world);
+    this.bottleUpdate = new BottleUpdateSystem(world);
   }
 
   update(dt) {
-    const w = this.world;
-
-    // 1) detect "just pressed"
-    if (this.input.justPressed(w.keyboard)) {
-      spawnBottle(w);
+    // 1) Detect "just pressed" → spawn bottle
+    if (this.input.justPressed()) {
+      this.spawn.spawn();
     }
 
-    // 2) update + cleanup bottles
-    updateBottles(w, dt);
+    // 2) Update + cleanup bottles
+    this.bottleUpdate.update(dt);
   }
 }
