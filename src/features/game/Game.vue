@@ -21,10 +21,7 @@
     </div>
 
     <!-- ✅ NEU: Intro/Outro Overlay -->
-    <div
-      v-if="screen !== 'playing'"
-      class="screen-overlay"
-      @click="onOverlayClick">
+    <div v-if="screen !== 'playing'" class="screen-overlay">
       <img class="screen-image" :src="screenImage" alt="" />
 
       <div class="screen-actions" @click.stop>
