@@ -192,6 +192,17 @@ export default class Game {
     ------------------------------------------------------------------------ */
 
     this.gameWorld.update(deltaTimeInFrames);
+
+    if (this.debugEnabled) {
+      this.debugFrames += 1;
+      if (this.debugFrames % 60 === 0) {
+        console.log("[Game]", {
+          dt: Number(deltaTimeInFrames.toFixed(2)),
+          camX: Number(this.cameraSystem.x.toFixed(1)),
+          playerX: Number(this.gameWorld.character?.x?.toFixed?.(1) ?? 0),
+        });
+      }
+    }
   }
 
   /* ==========================================================================
