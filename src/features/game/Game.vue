@@ -30,7 +30,7 @@
         <div class="screen-actions" @click.stop>
           <n-button
             class="start-button"
-            type="primary"
+            type="secondary"
             size="large"
             @click="onOverlayClick">
             {{ screen === "intro" ? "Start" : "Nochmal" }}
@@ -191,12 +191,10 @@ onBeforeUnmount(() => {
   padding: 12px 36px;
   font-size: 1.25rem;
   color: white;
-  background: var(--ds-overlay);
+  /* background: var(--ds-overlay); */
 }
 
 .start-button .n-button__content .n-button__border {
-  border: none !important;
-  border-color: red;
 }
 
 /* ✅ Optional: Lesbarkeit unten verbessern */
