@@ -10,7 +10,6 @@
       <n-button
         size="small"
         type="primary"
-        strong
         secondary
         circle
         @click="toggleFullscreen">
@@ -20,7 +19,6 @@
       </n-button>
     </div>
 
-    <!-- ✅ NEU: Intro/Outro Overlay -->
     <!-- ✅ NEU: Intro/Outro Overlay -->
     <div v-if="screen !== 'playing'" class="screen-overlay">
       <div class="screen-stage">
