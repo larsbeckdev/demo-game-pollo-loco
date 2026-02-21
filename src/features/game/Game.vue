@@ -150,6 +150,7 @@ onBeforeUnmount(() => {
   background: var(--ds-overlay);
   cursor: pointer;
   padding: 16px;
+  border-radius: 8px;
 }
 
 .screen-image {
