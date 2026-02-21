@@ -194,7 +194,7 @@ onBeforeUnmount(() => {
   background: var(--ds-overlay);
 }
 
-.start-button .n-button__content .n-button__border {
+.start-button span div {
   border: none !important;
 }
 
