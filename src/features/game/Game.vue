@@ -30,7 +30,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 
 // Game class
-import Game from "@/features/game/core/Game.js";
+import Game from "@/features/game/Game.js";
 
 // Icon
 import { Fullscreen } from "lucide-vue-next";
