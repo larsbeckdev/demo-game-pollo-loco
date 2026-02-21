@@ -147,38 +147,58 @@ onBeforeUnmount(() => {
   z-index: 50;
 }
 
-/* ✅ NEU: screen overlay */
+/* ✅ Screen overlay (liegt über Canvas) */
 .screen-overlay {
   position: absolute;
   inset: 0;
   z-index: 20;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: var(--ds-overlay);
-  cursor: pointer;
   border-radius: 8px;
+  overflow: hidden; /* wichtig damit Bild + Button nicht rauslaufen */
+  background: var(--ds-overlay);
 }
 
-.screen-image {
-  /* max-width: min(92vw, 900px); */
-  /* max-height: 80vh; */
-  border-radius: 8px;
-  display: block;
+/* ✅ Stage ist der relative Container fürs Bild */
+.screen-stage {
+  position: relative;
   width: 100%;
   height: 100%;
 }
 
-.screen-actions {
-  margin-top: 14px;
+/* ✅ Bild füllt Stage */
+.screen-image {
   position: absolute;
-  bottom: 5%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* oder: contain (siehe unten) */
+  display: block;
 }
 
-.screen-btn {
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: 0;
+/* ✅ Button liegt über dem Bild */
+.screen-actions {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: end center; /* unten mittig */
+  padding: 18px;
+}
+
+/* ✅ Optional: Lesbarkeit unten verbessern */
+.screen-actions::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  background: var(--ds-overlay);
+  pointer-events: none;
+}
+
+/* Button muss über dem Gradient liegen */
+.screen-actions > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Fullscreen wrapper */
