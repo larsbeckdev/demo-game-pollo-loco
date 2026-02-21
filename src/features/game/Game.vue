@@ -192,6 +192,10 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
+.start-button:hover {
+  color: #fff;
+}
+
 .start-button .n-button__content .n-button__border {
 }
 
