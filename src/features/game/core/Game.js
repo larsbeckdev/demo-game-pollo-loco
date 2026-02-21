@@ -203,10 +203,10 @@ export default class Game {
     this.debugLogTimerInFrames =
       (this.debugLogTimerInFrames ?? 0) + deltaTimeInFrames;
 
-    if (this.debugLogTimerInFrames >= 1) {
-      console.log("[DEBUG] cameraSystem.x:", this.cameraSystem.x.toFixed(2));
-      this.debugLogTimerInFrames = 0;
-    }
+    // if (this.debugLogTimerInFrames >= 1) {
+    //   console.log("[DEBUG] cameraSystem.x:", this.cameraSystem.x.toFixed(2));
+    //   this.debugLogTimerInFrames = 0;
+    // }
   }
 
   /* ==========================================================================
