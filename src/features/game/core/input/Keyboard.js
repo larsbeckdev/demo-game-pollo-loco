@@ -4,6 +4,7 @@ export default class Keyboard {
     this.D = false;
     this.SPACE = false;
     this.SHIFT = false;
+    this.E = false; // add
 
     window.addEventListener("keydown", (e) => this.onKey(e, true));
     window.addEventListener("keyup", (e) => this.onKey(e, false));
@@ -20,7 +21,7 @@ export default class Keyboard {
         break;
 
       case "Space":
-        e.preventDefault(); // verhindert Scrollen
+        e.preventDefault();
         this.SPACE = pressed;
         break;
 
@@ -28,6 +29,10 @@ export default class Keyboard {
       case "ShiftRight":
         this.SHIFT = pressed;
         break;
+
+      case "KeyE": // add
+        this.E = pressed; // add
+        break; // add
     }
   }
 
@@ -46,5 +51,10 @@ export default class Keyboard {
 
   get THROW() {
     return this.SHIFT;
+  }
+
+  get INTERACT() {
+    // add
+    return this.E; // add
   }
 }
