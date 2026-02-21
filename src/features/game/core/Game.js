@@ -1,84 +1,97 @@
 import Background from "@/features/game/rendering/Background.js"; // Background renderer
 import Camera from "@/features/game/rendering/Camera.js"; // Camera system
-import Keyboard from "@/features/game/core/input/Keyboard.js"; // Input handler
-import World from "@/features/game/core/world/World.js"; // Game world
+import Keyboard from "@/features/game/core/input/Keyboard.js"; // Keyboard input handler
+import World from "@/features/game/core/world/World.js"; // Game world container
 
 export default class Game {
-  constructor(canvas) {
-    this.canvas = canvas; // Canvas reference
-    this.ctx = canvas.getContext("2d"); // 2D context
+  constructor(canvasElement) {
+    this.canvasElement = canvasElement; // Canvas DOM element reference
+    this.canvasContext2D = canvasElement.getContext("2d"); // 2D drawing context
 
-    this.running = false; // Running state
-    this.rafId = null; // Frame id
+    this.isGameRunning = false; // Game loop running flag
+    this.requestAnimationFrameId = null; // requestAnimationFrame handle
 
-    this.background = new Background(); // Create background
-    this.camera = new Camera(); // Create camera
+    this.backgroundRenderer = new Background(); // Background renderer instance
+    this.cameraSystem = new Camera(); // Camera system instance
 
-    this.keyboard = new Keyboard(); // Create keyboard
+    this.keyboardInput = new Keyboard(); // Keyboard input instance
 
-    this.world = new World({
-      canvas: this.canvas, // Pass canvas
-      camera: this.camera, // Pass camera
-      keyboard: this.keyboard, // Pass keyboard
+    this.gameWorld = new World({
+      canvas: this.canvasElement, // Provide canvas element
+      camera: this.cameraSystem, // Provide camera system
+      keyboard: this.keyboardInput, // Provide keyboard input
     });
 
-    this.lastTs = 0; // Last timestamp
+    this.lastFrameTimestampMilliseconds = 0; // Last frame timestamp (ms)
   }
 
   start() {
-    this.running = true; // Set running
+    this.isGameRunning = true; // Enable game loop
 
-    const loop = (ts) => {
-      if (!this.running) return; // Stop loop
+    const gameLoop = (currentTimestampMilliseconds) => {
+      if (!this.isGameRunning) return; // Stop loop when not running
 
-      const dt = this.lastTs ? (ts - this.lastTs) / 16.67 : 1; // Delta time
-      this.lastTs = ts; // Update timestamp
+      const deltaTimeInFrames = this.lastFrameTimestampMilliseconds
+        ? (currentTimestampMilliseconds - this.lastFrameTimestampMilliseconds) /
+          16.67
+        : 1;
 
-      this.update(dt); // Update world
-      this.render(); // Render frame
+      this.lastFrameTimestampMilliseconds = currentTimestampMilliseconds; // Store timestamp
 
-      this.rafId = requestAnimationFrame(loop); // Next frame
+      this.update(deltaTimeInFrames); // Update game logic
+      this.render(); // Render current frame
+
+      this.requestAnimationFrameId = requestAnimationFrame(gameLoop); // Schedule next frame
     };
 
-    this.rafId = requestAnimationFrame(loop); // Start loop
+    this.requestAnimationFrameId = requestAnimationFrame(gameLoop); // Start loop
   }
 
   stop() {
-    this.running = false; // Stop running
-    if (this.rafId) cancelAnimationFrame(this.rafId); // Cancel frame
+    this.isGameRunning = false; // Disable loop
+    if (this.requestAnimationFrameId) {
+      cancelAnimationFrame(this.requestAnimationFrameId); // Cancel next frame
+      this.requestAnimationFrameId = null;
+    }
   }
 
-  update(dt) {
-    this.world.update(dt); // Update entities
+  update(deltaTimeInFrames) {
+    this.gameWorld.update(deltaTimeInFrames); // Update entities and systems
 
     // ----------------------------------------------
-    // DEBUG ENDE
+    // DEBUG SECTION
     // ----------------------------------------------
-    // Debug: Auto Scroll
+    // Debug: Auto-scroll camera to the right
     if (this.debugAutoScroll) {
-      this.camera.x += 100 * dt;
+      this.cameraSystem.x += 100 * deltaTimeInFrames;
     }
 
-    this._logTimer = (this._logTimer ?? 0) + dt;
-    if (this._logTimer >= 1) {
-      console.log("[DEBUG] camera.x:", this.camera.x.toFixed(2));
-      this._logTimer = 0;
+    this.debugLogTimerInFrames =
+      (this.debugLogTimerInFrames ?? 0) + deltaTimeInFrames;
+    if (this.debugLogTimerInFrames >= 1) {
+      console.log("[DEBUG] cameraSystem.x:", this.cameraSystem.x.toFixed(2));
+      this.debugLogTimerInFrames = 0;
     }
     // ----------------------------------------------
-    // DEBUG ENDE
+    // END DEBUG SECTION
     // ----------------------------------------------
   }
 
   render() {
-    const { ctx, canvas } = this; // Destructure refs
+    const canvasContext2D = this.canvasContext2D;
+    const canvasElement = this.canvasElement;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+    canvasContext2D.clearRect(0, 0, canvasElement.width, canvasElement.height); // Clear frame
 
-    this.background.draw(ctx, canvas.width, canvas.height, this.camera.x); // Draw background
+    this.backgroundRenderer.draw(
+      canvasContext2D,
+      canvasElement.width,
+      canvasElement.height,
+      this.cameraSystem.x,
+    ); // Draw background based on camera position
 
-    this.world.draw(ctx); // Draw world
+    this.gameWorld.draw(canvasContext2D); // Draw world entities
 
-    // this.fullscreenButton.draw(ctx);
-    // Draw fullscreen button
+    // this.fullscreenButton.draw(canvasContext2D); // Optional fullscreen button
   }
 }
