@@ -85,6 +85,14 @@ export default class Game {
 
     this.debugAutoScroll = false;
     this.debugLogTimerInFrames = 0;
+
+    /* ------------------------------------------------------------------------
+      ✅ ADD: listen to window resize
+    ------------------------------------------------------------------------ */
+
+    window.addEventListener("resize", () => {
+      this.resizeCanvasToDisplaySize();
+    });
   }
 
   /* ==========================================================================
