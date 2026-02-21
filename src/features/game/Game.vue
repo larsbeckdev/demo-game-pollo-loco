@@ -164,6 +164,8 @@ onBeforeUnmount(() => {
 
 .screen-actions {
   margin-top: 14px;
+  position: absolute;
+  bottom: 5%;
 }
 
 .screen-btn {
