@@ -37,7 +37,7 @@ defineProps({
   z-index: 9999;
   display: grid;
   place-items: center;
-  background: var(--ds-background, #111);
+  background: var(--ds-body-bg);
 }
 
 .card {
