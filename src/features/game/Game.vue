@@ -154,10 +154,12 @@ onBeforeUnmount(() => {
 }
 
 .screen-image {
-  max-width: min(92vw, 900px);
-  max-height: 80vh;
-  border-radius: 16px;
+  /* max-width: min(92vw, 900px); */
+  /* max-height: 80vh; */
+  border-radius: 8px;
   display: block;
+  width: 100%; 
+  height: 100%;
 }
 
 .screen-actions {
