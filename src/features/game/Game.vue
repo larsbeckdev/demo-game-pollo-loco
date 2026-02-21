@@ -21,13 +21,17 @@
     </div>
 
     <!-- ✅ NEU: Intro/Outro Overlay -->
+    <!-- ✅ NEU: Intro/Outro Overlay -->
     <div v-if="screen !== 'playing'" class="screen-overlay">
-      <img class="screen-image" :src="screenImage" alt="" />
+      <div class="screen-stage">
+        <img class="screen-image" :src="screenImage" alt="" />
 
-      <div class="screen-actions" @click.stop>
-        <n-button type="default" size="large" @click="onOverlayClick">
-          {{ screen === "intro" ? "Start" : "Nochmal" }}
-        </n-button>
+        <!-- ✅ Button-Layer über dem Bild -->
+        <div class="screen-actions" @click.stop>
+          <n-button type="default" size="large" @click="onOverlayClick">
+            {{ screen === "intro" ? "Start" : "Nochmal" }}
+          </n-button>
+        </div>
       </div>
     </div>
   </div>
