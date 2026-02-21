@@ -79,7 +79,7 @@ export default class ParallaxLayer {
       - Use modulo to create seamless horizontal tiling
     ------------------------------------------------------------------------ */
 
-    // ✅ CHANGE: stable modulo (always positive)
+    // CHANGE: stable modulo (always positive)
     const move = (cameraX * this.speed) % drawWidth;
     const offsetX = -((move + drawWidth) % drawWidth);
 
