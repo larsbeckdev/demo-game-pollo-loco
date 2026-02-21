@@ -1,50 +1,50 @@
 /* ============================================================================
   Character Animations
-  - Builds animation instances for the player character
+  - Builds all animation instances for the player
 ============================================================================ */
 
 import FrameAnimation from "@/features/game/utils/animation/frame-animation.js";
 import {
-  makeFramePaths,
-  rangeFrames,
-} from "@/features/game/utils/animation/frame-paths.js";
+  buildFramePaths,
+  buildFrameFileNames,
+} from "@/features/game/utils/animation/frame-path-builder.js";
 
 export function createCharacterAnimations() {
   const basePath = "/images/2_character_pepe";
 
-  const idlePaths = makeFramePaths(
+  const idlePaths = buildFramePaths(
     `${basePath}/1_idle/idle`,
-    rangeFrames("I-", 1, 10),
+    buildFrameFileNames("I-", 1, 10),
   );
 
-  const longIdlePaths = makeFramePaths(
+  const longIdlePaths = buildFramePaths(
     `${basePath}/1_idle/long_idle`,
-    rangeFrames("I-", 11, 20),
+    buildFrameFileNames("I-", 11, 20),
   );
 
-  const walkPaths = makeFramePaths(
+  const walkPaths = buildFramePaths(
     `${basePath}/2_walk`,
-    rangeFrames("W-", 21, 26),
+    buildFrameFileNames("W-", 21, 26),
   );
 
-  const jumpPaths = makeFramePaths(
+  const jumpPaths = buildFramePaths(
     `${basePath}/3_jump`,
-    rangeFrames("J-", 31, 39),
+    buildFrameFileNames("J-", 31, 39),
   );
 
-  const hurtPaths = makeFramePaths(
+  const hurtPaths = buildFramePaths(
     `${basePath}/4_hurt`,
-    rangeFrames("H-", 41, 43),
+    buildFrameFileNames("H-", 41, 43),
   );
 
-  const deadPaths = makeFramePaths(
+  const deadPaths = buildFramePaths(
     `${basePath}/5_dead`,
-    rangeFrames("D-", 51, 57),
+    buildFrameFileNames("D-", 51, 57),
   );
 
   return {
     idle: new FrameAnimation(idlePaths, 10),
-    long_idle: new FrameAnimation(longIdlePaths, 8),
+    longIdle: new FrameAnimation(longIdlePaths, 8),
     walk: new FrameAnimation(walkPaths, 14),
     jump: new FrameAnimation(jumpPaths, 10),
     fall: new FrameAnimation(jumpPaths, 10),
