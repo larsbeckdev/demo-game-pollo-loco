@@ -145,8 +145,9 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   z-index: 20;
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: var(--ds-overlay);
   cursor: pointer;
   padding: 16px;
