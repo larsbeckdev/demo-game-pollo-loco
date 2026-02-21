@@ -3,7 +3,7 @@
   - Bottle: projectile entity that can be thrown by the player
 ============================================================================ */
 
-import Bottle from "@/features/game/entities/Bottle.js";
+import Bottle from "@/features/game/entities/bottle/Bottle.js";
 
 /* ============================================================================
   BottleSpawnSystem
