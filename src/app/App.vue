@@ -1,7 +1,31 @@
-<script setup></script>
-
 <template>
-  <router-view></router-view>
+  <AppPreloader :visible="visible" :progress="progress" :message="message" />
+
+  <router-view />
 </template>
 
-<style scoped></style>
+<script setup>
+import { onMounted } from "vue";
+import AppPreloader from "@/components/AppPreloader.vue";
+import { useAppPreloader } from "@/composables/useAppPreloader";
+
+const { visible, progress, message, setProgress, finish } = useAppPreloader();
+
+onMounted(async () => {
+  // Simulierter Boot-Prozess
+  setProgress(0.2, "Loading configuration...");
+  await wait(400);
+
+  setProgress(0.5, "Initializing services...");
+  await wait(400);
+
+  setProgress(0.8, "Almost ready...");
+  await wait(400);
+
+  finish();
+});
+
+function wait(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+</script>
