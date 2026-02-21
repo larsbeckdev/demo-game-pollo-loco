@@ -7,14 +7,10 @@
     <!-- UI overlay -->
     <div class="ui">
       <!-- Fullscreen button -->
-      <n-button
-        size="small"
-        type="tertiary"
-        circle
-        @click="toggleFullscreen"
-        aria-label="Fullscreen umschalten">
-        <n-icon :size="18">
+      <n-button size="small" type="tertiary" circle @click="toggleFullscreen">
+        <n-icon>
           <Fullscreen />
+          <!-- Fullscreen icon -->
         </n-icon>
       </n-button>
     </div>
@@ -22,209 +18,84 @@
 </template>
 
 <script setup>
-// ============================================================================
-// Imports
-// ============================================================================
+// Vue imports
+import { ref, onMounted, onBeforeUnmount } from "vue"; // Vue lifecycle
+import Game from "@/features/game/core/Game.js"; // Game class
+import { Fullscreen } from "lucide-vue-next"; // Icon import
 
-// Vue lifecycle
-import { ref, onMounted, onBeforeUnmount } from "vue";
-
-// Game class
-import Game from "@/features/game/Game.js";
-
-// Icon
-import { Fullscreen } from "lucide-vue-next";
-
-// ============================================================================
-// Refs / State
-// ============================================================================
-
+// DOM references
 const wrap = ref(null); // Wrapper ref
 const canvas = ref(null); // Canvas ref
-let game = null; // Game instance
+let game; // Game instance
 
-// Keep a stable 16:9 base resolution (recommended for pixel-perfect rendering)
-const BASE_WIDTH = 800;
-const BASE_HEIGHT = 450;
-
-// ============================================================================
-// Helpers: Canvas sizing (no blur, responsive)
-// ============================================================================
-
-/**
- * Set canvas internal pixel size based on element size and devicePixelRatio.
- * This keeps rendering sharp (important for sprites).
- * @param {HTMLCanvasElement} canvasEl - Canvas
- */
-function resizeCanvasToElement(canvasEl) {
-  const rect = canvasEl.getBoundingClientRect();
-
-  // Guard: avoid zero sizes (rare, but can happen during layout)
-  if (rect.width <= 0 || rect.height <= 0) return;
-
-  // Match device pixel ratio for sharp rendering
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-  const nextWidth = Math.round(rect.width * dpr);
-  const nextHeight = Math.round(rect.height * dpr);
-
-  // Only write if size actually changed (prevents flicker & extra work)
-  if (canvasEl.width !== nextWidth) canvasEl.width = nextWidth;
-  if (canvasEl.height !== nextHeight) canvasEl.height = nextHeight;
+// Toggle fullscreen
+function toggleFullscreen() {
+  const el = wrap.value; // Get wrapper
+  if (!document.fullscreenElement)
+    el.requestFullscreen(); // Enter fullscreen
+  else document.exitFullscreen(); // Exit fullscreen
 }
 
-/**
- * Apply CSS aspect ratio + max width behavior, while keeping a sane base size.
- * - CSS controls layout size (responsive).
- * - Canvas internal size is set via resizeCanvasToElement for sharpness.
- */
-function setupInitialCanvasSize() {
-  const c = canvas.value;
-  if (!c) return;
-
-  // Set a predictable initial internal size (fallback)
-  c.width = BASE_WIDTH;
-  c.height = BASE_HEIGHT;
-
-  // Then immediately adapt to actual rendered size
-  resizeCanvasToElement(c);
-}
-
-// ============================================================================
-// Fullscreen
-// ============================================================================
-
-async function toggleFullscreen() {
-  const el = wrap.value;
-  if (!el) return;
-
-  // Enter fullscreen
-  if (!document.fullscreenElement) {
-    await el.requestFullscreen();
-    return;
-  }
-
-  // Exit fullscreen
-  await document.exitFullscreen();
-}
-
-// ============================================================================
-// Lifecycle
-// ============================================================================
-
-function onResize() {
-  const c = canvas.value;
-  if (!c) return;
-
-  resizeCanvasToElement(c);
-}
-
-function onFullscreenChange() {
-  // Fullscreen changes layout -> recalc canvas internal resolution
-  onResize();
-}
-
+// Mount lifecycle
 onMounted(() => {
-  // Setup canvas size
-  setupInitialCanvasSize();
+  const c = canvas.value; // Canvas element
+  c.width = 800; // Set width
+  c.height = 450; // Set height
 
-  // Create & start game
-  const c = canvas.value;
-  game = new Game(c);
-  game.start();
+  game = new Game(c); // Create game
+  game.start(); // Start loop
 
-  // Listen to resize + fullscreen changes
-  window.addEventListener("resize", onResize);
-  document.addEventListener("fullscreenchange", onFullscreenChange);
-
-  // Safety: trigger one more resize after initial layout
-  queueMicrotask(() => onResize());
+  console.log("[Game] mounted");
 });
 
+// Cleanup lifecycle
 onBeforeUnmount(() => {
-  // Stop game loop
-  game?.stop();
-  game = null;
+  game?.stop(); // Stop loop
 
-  // Cleanup listeners
-  window.removeEventListener("resize", onResize);
-  document.removeEventListener("fullscreenchange", onFullscreenChange);
+  console.log("[Game] beforeUnmount");
 });
 </script>
 
 <style scoped>
-/* ============================================================================
-  Layout wrapper
-============================================================================ */
-
+/* Wrapper styles */
 .game-wrap {
-  position: relative;
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-
-  /* Prevent scrollbars caused by fullscreen sizing on some browsers */
-  overflow: hidden;
+  position: relative; /* Relative layout */
+  width: 100%; /* Full width */
+  max-width: 900px; /* Max width */
+  margin: 0 auto; /* Center container */
 }
 
-/* ============================================================================
-  Canvas
-  - CSS controls responsive sizing
-  - JS sets internal pixel resolution for sharp rendering
-============================================================================ */
-
+/* Canvas styles */
 .game-canvas {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  display: block;
-
-  background: var(--ds-card-bg);
-  border: 1px solid var(--ds-border);
-  border-radius: 8px;
+  width: 100%; /* Responsive width */
+  aspect-ratio: 16 / 9; /* Fixed ratio */
+  display: block; /* Remove gap */
+  background: var(--ds-card-bg); /* Canvas background */
+  border: 1px solid var(--ds-border); /* Canvas border */
+  border-radius: 8px; /* Rounded corners */
 }
 
-/* ============================================================================
-  UI overlay
-============================================================================ */
-
+/* UI overlay */
 .ui {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
+  position: absolute; /* Overlay position */
+  top: 12px; /* Top offset */
+  right: 12px; /* Right offset */
+  z-index: 10; /* Above canvas */
 }
 
-/* Ensure all buttons show pointer cursor (checklist) */
-.ui :deep(button),
-.ui :deep(.n-button) {
-  cursor: pointer;
-}
-
-/* ============================================================================
-  Fullscreen
-============================================================================ */
-
+/* Fullscreen wrapper */
 .game-wrap:fullscreen {
-  width: 100vw;
-  height: 100vh;
-  max-width: none;
-  margin: 0;
-
-  /* Prevent browser UI margins */
-  background: #000;
+  width: 100vw; /* Full viewport */
+  height: 100vh; /* Full height */
+  max-width: none; /* Remove limit */
+  margin: 0; /* Remove margin */
 }
 
+/* Fullscreen canvas */
 .game-wrap:fullscreen .game-canvas {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
-  border-radius: 0;
-  border: none;
-}
-
-/* Keep UI visible in fullscreen */
-.game-wrap:fullscreen .ui {
-  top: 16px;
-  right: 16px;
+  width: 100%; /* Fill width */
+  height: 100%; /* Fill height */
+  aspect-ratio: auto; /* Disable ratio */
+  border-radius: 0; /* Remove radius */
 }
 </style>
