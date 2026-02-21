@@ -2,10 +2,10 @@ import Collectable from "./Collectable.js";
 
 export default class SalsaBottlePickup extends Collectable {
   constructor({ x, y } = {}) {
-    super({ x, y, w: 50, h: 50 });
+    super({ x, y, w: 32, h: 32 });
 
     this.img = new Image();
-    this.img.src = "/images/6_salsa_bottle/salsa_bottle.png"; // aus deinem Screenshot
+    this.img.src = "/images/6_salsa_bottle/salsa_bottle.png"; 
   }
 
   draw(ctx, cameraX = 0) {
