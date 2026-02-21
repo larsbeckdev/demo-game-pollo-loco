@@ -30,7 +30,6 @@
         <div class="screen-actions" @click.stop>
           <n-button
             type="primary"
-            secondary
             size="large"
             @click="onOverlayClick">
             {{ screen === "intro" ? "Start" : "Nochmal" }}
