@@ -1,153 +1,23 @@
 /* ============================================================================
-  Animation Helper Functions
-  - Utility functions for building animation frame paths
-============================================================================ */
-
-/* ----------------------------------------------------------------------------
-  makeFramePaths
-  - Combines a base path with an array of filenames
-  - Returns an array of full image paths
----------------------------------------------------------------------------- */
-
-function makeFramePaths(basePath, fileNames) {
-  return fileNames.map((fileName) => `${basePath}/${fileName}`);
-}
-
-/* ----------------------------------------------------------------------------
-  rangeFrames
-  - Generates filenames in the format: prefix + number + ".png"
-  - Example: rangeFrames("I-", 1, 3)
-    → ["I-1.png", "I-2.png", "I-3.png"]
----------------------------------------------------------------------------- */
-
-function rangeFrames(prefix, fromNumber, toNumber) {
-  const result = [];
-
-  for (let index = fromNumber; index <= toNumber; index++) {
-    result.push(`${prefix}${index}.png`);
-  }
-
-  return result;
-}
-
-/* ============================================================================
-  FrameAnimation
-  - Handles sprite animation timing and frame switching
-  - Uses a 60 frames per second reference for delta time
-============================================================================ */
-
-class FrameAnimation {
-  /* --------------------------------------------------------------------------
-    Constructor
-    - paths: array of image paths
-    - framesPerSecond: animation speed
-  -------------------------------------------------------------------------- */
-
-  constructor(paths, framesPerSecond = 12) {
-    this.paths = paths;
-    this.framesPerSecond = framesPerSecond;
-
-    /* ------------------------------------------------------------------------
-      Preload images
-    ------------------------------------------------------------------------ */
-
-    this.images = paths.map((sourcePath) => {
-      const image = new Image();
-      image.src = sourcePath;
-      return image;
-    });
-
-    /* ------------------------------------------------------------------------
-      Animation state
-    ------------------------------------------------------------------------ */
-
-    this.currentFrameIndex = 0;
-    this.accumulatedTime = 0;
-  }
-
-  /* --------------------------------------------------------------------------
-    reset
-    - Resets animation to first frame
-  -------------------------------------------------------------------------- */
-
-  reset() {
-    this.currentFrameIndex = 0;
-    this.accumulatedTime = 0;
-  }
-
-  /* --------------------------------------------------------------------------
-    update
-    - dt: delta time (frame-based, 1 ≈ one frame at 60 frames per second)
-  -------------------------------------------------------------------------- */
-
-  update(deltaTimeInFrames) {
-    const frameDuration = 60 / this.framesPerSecond;
-
-    this.accumulatedTime += deltaTimeInFrames;
-
-    while (this.accumulatedTime >= frameDuration) {
-      this.accumulatedTime -= frameDuration;
-
-      this.currentFrameIndex =
-        (this.currentFrameIndex + 1) % this.images.length;
-    }
-  }
-
-  /* --------------------------------------------------------------------------
-    Current frame image
-  -------------------------------------------------------------------------- */
-
-  get image() {
-    return this.images[this.currentFrameIndex];
-  }
-
-  /* --------------------------------------------------------------------------
-    Ready state
-    - Ensures image is fully loaded before rendering
-  -------------------------------------------------------------------------- */
-
-  get ready() {
-    const image = this.image;
-    return image && image.complete && image.naturalWidth > 0;
-  }
-}
-
-/* ============================================================================
   Character
   - Player entity
-  - Handles:
-      - Movement and physics
-      - State machine
-      - Health system
-      - Animations
-      - Rendering
+  - Handles movement, physics, state machine, health, animations, rendering
 ============================================================================ */
 
+import { createCharacterAnimations } from "./character-animations.js";
+
 export default class Character {
-  /* ==========================================================================
-    Constructor
-  ========================================================================== */
-
   constructor({ x = 70, groundY = 270 - 40, width = 90, height = 140 } = {}) {
-    /* ------------------------------------------------------------------------
-      World Position
-    ------------------------------------------------------------------------ */
-
+    // World position
     this.x = x;
     this.y = groundY;
     this.groundY = groundY;
 
-    /* ------------------------------------------------------------------------
-      Size
-    ------------------------------------------------------------------------ */
-
+    // Size
     this.w = width;
     this.h = height;
 
-    /* ------------------------------------------------------------------------
-      Physics and Movement
-    ------------------------------------------------------------------------ */
-
+    // Physics and movement
     this.vx = 0;
     this.vy = 0;
 
@@ -158,10 +28,7 @@ export default class Character {
     this.facing = 1;
     this.onGround = true;
 
-    /* ------------------------------------------------------------------------
-      Health System
-    ------------------------------------------------------------------------ */
-
+    // Health system
     this.maxHp = 3;
     this.hp = 3;
 
@@ -175,66 +42,15 @@ export default class Character {
     this.hurtTimer = 0;
     this.hurtDuration = 24;
 
-    /* ------------------------------------------------------------------------
-      State Machine
-    ------------------------------------------------------------------------ */
-
+    // State machine
     this.state = "idle";
     this.idleTimer = 0;
     this.longIdleAfter = 180;
 
-    /* ------------------------------------------------------------------------
-      Animation Setup
-    ------------------------------------------------------------------------ */
-
-    const basePath = "/images/2_character_pepe";
-
-    const idlePaths = makeFramePaths(
-      `${basePath}/1_idle/idle`,
-      rangeFrames("I-", 1, 10),
-    );
-
-    const longIdlePaths = makeFramePaths(
-      `${basePath}/1_idle/long_idle`,
-      rangeFrames("I-", 11, 20),
-    );
-
-    const walkPaths = makeFramePaths(
-      `${basePath}/2_walk`,
-      rangeFrames("W-", 21, 26),
-    );
-
-    const jumpPaths = makeFramePaths(
-      `${basePath}/3_jump`,
-      rangeFrames("J-", 31, 39),
-    );
-
-    const hurtPaths = makeFramePaths(
-      `${basePath}/4_hurt`,
-      rangeFrames("H-", 41, 43),
-    );
-
-    const deadPaths = makeFramePaths(
-      `${basePath}/5_dead`,
-      rangeFrames("D-", 51, 57),
-    );
-
-    this.animations = {
-      idle: new FrameAnimation(idlePaths, 10),
-      long_idle: new FrameAnimation(longIdlePaths, 8),
-      walk: new FrameAnimation(walkPaths, 14),
-      jump: new FrameAnimation(jumpPaths, 10),
-      fall: new FrameAnimation(jumpPaths, 10),
-      hurt: new FrameAnimation(hurtPaths, 12),
-      dead: new FrameAnimation(deadPaths, 10),
-    };
-
+    // Animations
+    this.animations = createCharacterAnimations();
     this.currentAnimationKey = "idle";
   }
-
-  /* ==========================================================================
-    Input Handling
-  ========================================================================== */
 
   handleInput(keyboard) {
     if (this.dead || this.hurtActive) return;
@@ -263,10 +79,6 @@ export default class Character {
     this.vy = -this.jumpForce;
   }
 
-  /* ==========================================================================
-    Animation Control
-  ========================================================================== */
-
   setAnimation(key) {
     if (this.currentAnimationKey === key) return;
 
@@ -281,28 +93,15 @@ export default class Character {
     }
   }
 
-  /* ==========================================================================
-    Update Loop
-  ========================================================================== */
-
   update(deltaTimeInFrames = 1) {
-    /* ------------------------------------------------------------------------
-      Horizontal movement
-    ------------------------------------------------------------------------ */
-
+    // Horizontal movement
     this.x += this.vx * deltaTimeInFrames;
 
-    /* ------------------------------------------------------------------------
-      Gravity and vertical movement
-    ------------------------------------------------------------------------ */
-
+    // Gravity and vertical movement
     this.vy += this.gravity * deltaTimeInFrames;
     this.y += this.vy * deltaTimeInFrames;
 
-    /* ------------------------------------------------------------------------
-      Ground collision
-    ------------------------------------------------------------------------ */
-
+    // Ground collision
     if (this.y >= this.groundY) {
       this.y = this.groundY;
       this.vy = 0;
@@ -311,10 +110,7 @@ export default class Character {
       this.onGround = false;
     }
 
-    /* ------------------------------------------------------------------------
-      State resolution (priority-based)
-    ------------------------------------------------------------------------ */
-
+    // State resolution (priority-based)
     if (this.dead) {
       this.state = "dead";
     } else if (this.hurtActive) {
@@ -339,17 +135,11 @@ export default class Character {
       }
     }
 
-    /* ------------------------------------------------------------------------
-      Apply animation
-    ------------------------------------------------------------------------ */
-
+    // Apply animation
     this.setAnimation(this.state);
     this.animations[this.currentAnimationKey].update(deltaTimeInFrames);
 
-    /* ------------------------------------------------------------------------
-      Invincibility timer
-    ------------------------------------------------------------------------ */
-
+    // Invincibility timer
     if (this.invincible) {
       this.invincibleTimer -= deltaTimeInFrames;
 
@@ -359,10 +149,6 @@ export default class Character {
       }
     }
   }
-
-  /* ==========================================================================
-    Damage Handling
-  ========================================================================== */
 
   takeDamage() {
     if (this.dead || this.invincible) return;
@@ -386,10 +172,6 @@ export default class Character {
     }
   }
 
-  /* ==========================================================================
-    Rendering
-  ========================================================================== */
-
   draw(ctx, cameraX = 0) {
     const animation = this.animations[this.currentAnimationKey];
     const image = animation.image;
@@ -397,10 +179,7 @@ export default class Character {
     const screenX = this.x - cameraX;
     const drawY = this.y - this.h;
 
-    /* ------------------------------------------------------------------------
-      Hurt blink effect
-    ------------------------------------------------------------------------ */
-
+    // Hurt blink effect
     if (this.hurtActive && !this.dead) {
       if (Math.floor(this.hurtTimer / 3) % 2 === 0) return;
     }
@@ -419,10 +198,6 @@ export default class Character {
 
     ctx.restore();
   }
-
-  /* ==========================================================================
-    Collision Bounds
-  ========================================================================== */
 
   getBounds() {
     return {
