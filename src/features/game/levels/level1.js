@@ -21,7 +21,7 @@ export const level1 = {
     - groundOffset: distance from bottom of canvas to ground
   -------------------------------------------------------------------------- */
 
-  worldWidth: 6000,
+  worldWidth: 600,
   groundOffset: 40,
 
   /* ==========================================================================
