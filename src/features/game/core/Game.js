@@ -50,13 +50,6 @@ export default class Game {
 
   update(dt) {
     this.world.update(dt); // Update entities
-
-
-
-    // Game.js oder World.js update(dt)
-    if (this.debugAutoScroll) {
-      this.camera.x += 200 * dt; 
-    }
   }
 
   render() {
