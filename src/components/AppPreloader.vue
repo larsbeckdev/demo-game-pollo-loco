@@ -50,6 +50,7 @@ defineProps({
 .title {
   font-weight: 700;
   font-size: 18px;
+  color: var(--ds-text, #eee);
 }
 
 .fade-enter-active,
