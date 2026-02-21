@@ -1,3 +1,14 @@
+/* ============================================================================
+  Character Animations
+  - Builds animation instances for the player character
+============================================================================ */
+
+import FrameAnimation from "@/features/game/utils/animation/frame-animation.js";
+import {
+  makeFramePaths,
+  rangeFrames,
+} from "@/features/game/utils/animation/frame-paths.js";
+
 export function createCharacterAnimations() {
   const basePath = "/images/2_character_pepe";
 
