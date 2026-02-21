@@ -5,7 +5,7 @@ export default class SalsaBottlePickup extends Collectable {
     super({ x, y, w: 32, h: 32 });
 
     this.img = new Image();
-    this.img.src = "/images/6_salsa_bottle/salsa_bottle.png"; 
+    this.img.src = "/images/6_salsa_bottle/salsa_bottle.png";
   }
 
   draw(ctx, cameraX = 0) {
