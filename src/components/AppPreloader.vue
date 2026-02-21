@@ -44,6 +44,7 @@ defineProps({
 
 .card {
   width: min(420px, 90%);
+  background: var(--ds-card-bg, #222);
 }
 
 .title {
