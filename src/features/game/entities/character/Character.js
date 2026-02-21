@@ -7,7 +7,7 @@
 import { createCharacterAnimations } from "./character-animations.js";
 
 export default class Character {
-  constructor({ x = 70, groundY = 230 - 40, width = 90, height = 140 } = {}) {
+  constructor({ x = 70, groundY = 0, width = 90, height = 140 } = {}) {
     // World position
     this.x = x;
     this.y = groundY;
