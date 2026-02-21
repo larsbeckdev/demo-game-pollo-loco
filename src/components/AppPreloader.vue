@@ -45,6 +45,9 @@ defineProps({
 .card {
   width: min(420px, 90%);
   background: var(--ds-card-bg, #222);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .title {
