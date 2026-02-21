@@ -9,7 +9,7 @@
       <!-- Fullscreen button -->
       <n-button
         size="small"
-        type="default"
+        type="primary"
         strong
         secondary
         circle
