@@ -1,24 +1,27 @@
-import clampPlayerX from "./clampPlayerX.js";
-import updateCameraFollow from "./updateCameraFollow.js";
+import PlayerBoundsSystem from "./PlayerBoundsSystem.js";
+import CameraFollowSystem from "./CameraFollowSystem.js";
 
 export default class MovementSystem {
   constructor(world) {
     this.world = world;
+
+    this.playerBounds = new PlayerBoundsSystem(world);
+    this.cameraFollow = new CameraFollowSystem(world);
   }
 
   update(dt) {
     const w = this.world;
 
-    // 1) Input -> (sets intentions like left/right/jump)
+    // 1) Input → sets movement intentions
     w.character.handleInput(w.keyboard);
 
-    // 2) Physics/Movement update (uses dt)
+    // 2) Physics update
     w.character.update(dt);
 
-    // 3) Keep player inside world bounds
-    clampPlayerX(w);
+    // 3) Clamp player inside world
+    this.playerBounds.update();
 
-    // 4) Camera follows character (clamped to world)
-    updateCameraFollow(w);
+    // 4) Camera follow
+    this.cameraFollow.update();
   }
 }
