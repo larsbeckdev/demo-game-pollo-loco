@@ -1,95 +1,156 @@
-/* =========================================================
- * 🧩 Animation Helper Functions
- * ======================================================= */
+/* ============================================================================
+  Animation Helper Functions
+  - Utility functions for building animation frame paths
+============================================================================ */
 
-/**
- * Builds full frame paths from base path + filenames
- */
-function makeFramePaths(base, names) {
-  return names.map((n) => `${base}/${n}`);
+/* ----------------------------------------------------------------------------
+  makeFramePaths
+  - Combines a base path with an array of filenames
+  - Returns an array of full image paths
+---------------------------------------------------------------------------- */
+
+function makeFramePaths(basePath, fileNames) {
+  return fileNames.map((fileName) => `${basePath}/${fileName}`);
 }
 
-/**
- * Generates filenames like prefix1.png → prefixX.png
- */
-function rangeFrames(prefix, from, to) {
-  const arr = [];
-  for (let i = from; i <= to; i++) {
-    arr.push(`${prefix}${i}.png`);
+/* ----------------------------------------------------------------------------
+  rangeFrames
+  - Generates filenames in the format: prefix + number + ".png"
+  - Example: rangeFrames("I-", 1, 3)
+    → ["I-1.png", "I-2.png", "I-3.png"]
+---------------------------------------------------------------------------- */
+
+function rangeFrames(prefix, fromNumber, toNumber) {
+  const result = [];
+
+  for (let index = fromNumber; index <= toNumber; index++) {
+    result.push(`${prefix}${index}.png`);
   }
-  return arr;
+
+  return result;
 }
 
-/* =========================================================
- * 🎞 FrameAnimation
- * Handles sprite animation timing
- * ======================================================= */
+/* ============================================================================
+  FrameAnimation
+  - Handles sprite animation timing and frame switching
+  - Uses a 60 frames per second reference for delta time
+============================================================================ */
 
 class FrameAnimation {
-  constructor(paths, fps = 12) {
-    this.paths = paths;
-    this.fps = fps;
+  /* --------------------------------------------------------------------------
+    Constructor
+    - paths: array of image paths
+    - framesPerSecond: animation speed
+  -------------------------------------------------------------------------- */
 
-    this.images = paths.map((src) => {
-      const img = new Image();
-      img.src = src;
-      return img;
+  constructor(paths, framesPerSecond = 12) {
+    this.paths = paths;
+    this.framesPerSecond = framesPerSecond;
+
+    /* ------------------------------------------------------------------------
+      Preload images
+    ------------------------------------------------------------------------ */
+
+    this.images = paths.map((sourcePath) => {
+      const image = new Image();
+      image.src = sourcePath;
+      return image;
     });
 
-    this.frame = 0;
-    this.acc = 0;
+    /* ------------------------------------------------------------------------
+      Animation state
+    ------------------------------------------------------------------------ */
+
+    this.currentFrameIndex = 0;
+    this.accumulatedTime = 0;
   }
+
+  /* --------------------------------------------------------------------------
+    reset
+    - Resets animation to first frame
+  -------------------------------------------------------------------------- */
 
   reset() {
-    this.frame = 0;
-    this.acc = 0;
+    this.currentFrameIndex = 0;
+    this.accumulatedTime = 0;
   }
 
-  update(dt) {
-    const frameTime = 60 / this.fps; // dt based (60fps reference)
-    this.acc += dt;
+  /* --------------------------------------------------------------------------
+    update
+    - dt: delta time (frame-based, 1 ≈ one frame at 60 frames per second)
+  -------------------------------------------------------------------------- */
 
-    while (this.acc >= frameTime) {
-      this.acc -= frameTime;
-      this.frame = (this.frame + 1) % this.images.length;
+  update(deltaTimeInFrames) {
+    const frameDuration = 60 / this.framesPerSecond;
+
+    this.accumulatedTime += deltaTimeInFrames;
+
+    while (this.accumulatedTime >= frameDuration) {
+      this.accumulatedTime -= frameDuration;
+
+      this.currentFrameIndex =
+        (this.currentFrameIndex + 1) % this.images.length;
     }
   }
 
+  /* --------------------------------------------------------------------------
+    Current frame image
+  -------------------------------------------------------------------------- */
+
   get image() {
-    return this.images[this.frame];
+    return this.images[this.currentFrameIndex];
   }
 
+  /* --------------------------------------------------------------------------
+    Ready state
+    - Ensures image is fully loaded before rendering
+  -------------------------------------------------------------------------- */
+
   get ready() {
-    const img = this.image;
-    return img && img.complete && img.naturalWidth > 0;
+    const image = this.image;
+    return image && image.complete && image.naturalWidth > 0;
   }
 }
 
-/* =========================================================
- * Character
- * Player entity with physics, state machine & animations
- * ======================================================= */
+/* ============================================================================
+  Character
+  - Player entity
+  - Handles:
+      - Movement and physics
+      - State machine
+      - Health system
+      - Animations
+      - Rendering
+============================================================================ */
 
 export default class Character {
+  /* ==========================================================================
+    Constructor
+  ========================================================================== */
+
   constructor({ x = 70, groundY = 270 - 40, width = 90, height = 140 } = {}) {
-    /* -----------------------------
-     * World Position
-     * --------------------------- */
+    /* ------------------------------------------------------------------------
+      World Position
+    ------------------------------------------------------------------------ */
+
     this.x = x;
     this.y = groundY;
     this.groundY = groundY;
 
-    /* -----------------------------
-     * Size
-     * --------------------------- */
+    /* ------------------------------------------------------------------------
+      Size
+    ------------------------------------------------------------------------ */
+
     this.w = width;
     this.h = height;
 
-    /* -----------------------------
-     * Physics / Movement
-     * --------------------------- */
+    /* ------------------------------------------------------------------------
+      Physics and Movement
+    ------------------------------------------------------------------------ */
+
     this.vx = 0;
     this.vy = 0;
+
     this.speed = 4.8;
     this.jumpForce = 14;
     this.gravity = 0.9;
@@ -97,9 +158,10 @@ export default class Character {
     this.facing = 1;
     this.onGround = true;
 
-    /* -----------------------------
-     * Health System
-     * --------------------------- */
+    /* ------------------------------------------------------------------------
+      Health System
+    ------------------------------------------------------------------------ */
+
     this.maxHp = 3;
     this.hp = 3;
 
@@ -113,49 +175,51 @@ export default class Character {
     this.hurtTimer = 0;
     this.hurtDuration = 24;
 
-    /* -----------------------------
-     * State Machine
-     * --------------------------- */
+    /* ------------------------------------------------------------------------
+      State Machine
+    ------------------------------------------------------------------------ */
+
     this.state = "idle";
     this.idleTimer = 0;
     this.longIdleAfter = 180;
 
-    /* -----------------------------
-     * Animations
-     * --------------------------- */
-    const base = "/images/2_character_pepe";
+    /* ------------------------------------------------------------------------
+      Animation Setup
+    ------------------------------------------------------------------------ */
+
+    const basePath = "/images/2_character_pepe";
 
     const idlePaths = makeFramePaths(
-      `${base}/1_idle/idle`,
+      `${basePath}/1_idle/idle`,
       rangeFrames("I-", 1, 10),
     );
 
     const longIdlePaths = makeFramePaths(
-      `${base}/1_idle/long_idle`,
+      `${basePath}/1_idle/long_idle`,
       rangeFrames("I-", 11, 20),
     );
 
     const walkPaths = makeFramePaths(
-      `${base}/2_walk`,
+      `${basePath}/2_walk`,
       rangeFrames("W-", 21, 26),
     );
 
     const jumpPaths = makeFramePaths(
-      `${base}/3_jump`,
+      `${basePath}/3_jump`,
       rangeFrames("J-", 31, 39),
     );
 
     const hurtPaths = makeFramePaths(
-      `${base}/4_hurt`,
+      `${basePath}/4_hurt`,
       rangeFrames("H-", 41, 43),
     );
 
     const deadPaths = makeFramePaths(
-      `${base}/5_dead`,
+      `${basePath}/5_dead`,
       rangeFrames("D-", 51, 57),
     );
 
-    this.anims = {
+    this.animations = {
       idle: new FrameAnimation(idlePaths, 10),
       long_idle: new FrameAnimation(longIdlePaths, 8),
       walk: new FrameAnimation(walkPaths, 14),
@@ -165,12 +229,12 @@ export default class Character {
       dead: new FrameAnimation(deadPaths, 10),
     };
 
-    this.currentAnimKey = "idle";
+    this.currentAnimationKey = "idle";
   }
 
-  /* =========================================================
-   * Input
-   * ======================================================= */
+  /* ==========================================================================
+    Input Handling
+  ========================================================================== */
 
   handleInput(keyboard) {
     if (this.dead || this.hurtActive) return;
@@ -194,41 +258,51 @@ export default class Character {
 
   jump() {
     if (!this.onGround) return;
+
     this.onGround = false;
     this.vy = -this.jumpForce;
   }
 
-  /* =========================================================
-   * Animation Control
-   * ======================================================= */
+  /* ==========================================================================
+    Animation Control
+  ========================================================================== */
 
-  setAnim(key) {
-    if (this.currentAnimKey === key) return;
+  setAnimation(key) {
+    if (this.currentAnimationKey === key) return;
 
     const isJumpFallSwitch =
-      (this.currentAnimKey === "jump" && key === "fall") ||
-      (this.currentAnimKey === "fall" && key === "jump");
+      (this.currentAnimationKey === "jump" && key === "fall") ||
+      (this.currentAnimationKey === "fall" && key === "jump");
 
-    this.currentAnimKey = key;
+    this.currentAnimationKey = key;
 
     if (!isJumpFallSwitch) {
-      this.anims[key]?.reset();
+      this.animations[key]?.reset();
     }
   }
 
-  /* =========================================================
-   * Update Loop
-   * ======================================================= */
+  /* ==========================================================================
+    Update Loop
+  ========================================================================== */
 
-  update(dt = 1) {
-    // Movement X
-    this.x += this.vx * dt;
+  update(deltaTimeInFrames = 1) {
+    /* ------------------------------------------------------------------------
+      Horizontal movement
+    ------------------------------------------------------------------------ */
 
-    // Gravity
-    this.vy += this.gravity * dt;
-    this.y += this.vy * dt;
+    this.x += this.vx * deltaTimeInFrames;
 
-    // Ground Check
+    /* ------------------------------------------------------------------------
+      Gravity and vertical movement
+    ------------------------------------------------------------------------ */
+
+    this.vy += this.gravity * deltaTimeInFrames;
+    this.y += this.vy * deltaTimeInFrames;
+
+    /* ------------------------------------------------------------------------
+      Ground collision
+    ------------------------------------------------------------------------ */
+
     if (this.y >= this.groundY) {
       this.y = this.groundY;
       this.vy = 0;
@@ -237,12 +311,15 @@ export default class Character {
       this.onGround = false;
     }
 
-    // State Priority
+    /* ------------------------------------------------------------------------
+      State resolution (priority-based)
+    ------------------------------------------------------------------------ */
+
     if (this.dead) {
       this.state = "dead";
     } else if (this.hurtActive) {
       this.state = "hurt";
-      this.hurtTimer -= dt;
+      this.hurtTimer -= deltaTimeInFrames;
 
       if (this.hurtTimer <= 0) {
         this.hurtActive = false;
@@ -256,18 +333,25 @@ export default class Character {
         this.idleTimer = 0;
         this.state = "walk";
       } else {
-        this.idleTimer += dt;
+        this.idleTimer += deltaTimeInFrames;
         this.state =
           this.idleTimer >= this.longIdleAfter ? "long_idle" : "idle";
       }
     }
 
-    this.setAnim(this.state);
-    this.anims[this.currentAnimKey].update(dt);
+    /* ------------------------------------------------------------------------
+      Apply animation
+    ------------------------------------------------------------------------ */
 
-    // Invincibility
+    this.setAnimation(this.state);
+    this.animations[this.currentAnimationKey].update(deltaTimeInFrames);
+
+    /* ------------------------------------------------------------------------
+      Invincibility timer
+    ------------------------------------------------------------------------ */
+
     if (this.invincible) {
-      this.invincibleTimer -= dt;
+      this.invincibleTimer -= deltaTimeInFrames;
 
       if (this.invincibleTimer <= 0) {
         this.invincible = false;
@@ -276,9 +360,9 @@ export default class Character {
     }
   }
 
-  /* =========================================================
-   * Damage
-   * ======================================================= */
+  /* ==========================================================================
+    Damage Handling
+  ========================================================================== */
 
   takeDamage() {
     if (this.dead || this.invincible) return;
@@ -302,39 +386,43 @@ export default class Character {
     }
   }
 
-  /* =========================================================
-   * Rendering
-   * ======================================================= */
+  /* ==========================================================================
+    Rendering
+  ========================================================================== */
 
   draw(ctx, cameraX = 0) {
-    const anim = this.anims[this.currentAnimKey];
-    const img = anim.image;
+    const animation = this.animations[this.currentAnimationKey];
+    const image = animation.image;
 
     const screenX = this.x - cameraX;
     const drawY = this.y - this.h;
+
+    /* ------------------------------------------------------------------------
+      Hurt blink effect
+    ------------------------------------------------------------------------ */
 
     if (this.hurtActive && !this.dead) {
       if (Math.floor(this.hurtTimer / 3) % 2 === 0) return;
     }
 
-    if (!anim.ready) return;
+    if (!animation.ready) return;
 
     ctx.save();
 
     if (this.facing === -1) {
       ctx.translate(screenX + this.w, 0);
       ctx.scale(-1, 1);
-      ctx.drawImage(img, 0, drawY, this.w, this.h);
+      ctx.drawImage(image, 0, drawY, this.w, this.h);
     } else {
-      ctx.drawImage(img, screenX, drawY, this.w, this.h);
+      ctx.drawImage(image, screenX, drawY, this.w, this.h);
     }
 
     ctx.restore();
   }
 
-  /* =========================================================
-   * Collision Bounds
-   * ======================================================= */
+  /* ==========================================================================
+    Collision Bounds
+  ========================================================================== */
 
   getBounds() {
     return {
