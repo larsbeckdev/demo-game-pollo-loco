@@ -1,18 +1,18 @@
 /* ============================================================================
-  Frame Path Builder
-  - Creates file names and full paths for animation frames
+  Frame Path Helpers
+  - Build animation frame file names and full paths
 ============================================================================ */
 
-export function buildFrameFileNames(prefix, startNumber, endNumber) {
-  const fileNames = [];
-
-  for (let number = startNumber; number <= endNumber; number++) {
-    fileNames.push(`${prefix}${number}.png`);
-  }
-
-  return fileNames;
+export function makeFramePaths(basePath, fileNames) {
+  return fileNames.map((fileName) => `${basePath}/${fileName}`);
 }
 
-export function buildFramePaths(basePath, fileNames) {
-  return fileNames.map((fileName) => `${basePath}/${fileName}`);
+export function rangeFrames(prefix, fromNumber, toNumber) {
+  const result = [];
+
+  for (let index = fromNumber; index <= toNumber; index++) {
+    result.push(`${prefix}${index}.png`);
+  }
+
+  return result;
 }

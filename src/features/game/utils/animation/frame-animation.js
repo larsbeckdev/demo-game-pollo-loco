@@ -1,48 +1,49 @@
 /* ============================================================================
   FrameAnimation
   - Handles sprite animation timing and frame switching
-  - Delta time is frame-based (1 = one frame at 60 FPS)
+  - Uses a 60 FPS reference for delta time (dt: 1 ≈ one frame at 60 FPS)
 ============================================================================ */
 
 export default class FrameAnimation {
-  constructor(imagePaths, framesPerSecond = 12) {
-    this.imagePaths = imagePaths;
+  constructor(paths, framesPerSecond = 12) {
+    this.paths = paths;
     this.framesPerSecond = framesPerSecond;
 
-    this.loadedImages = imagePaths.map((path) => {
+    // Preload images
+    this.images = paths.map((sourcePath) => {
       const image = new Image();
-      image.src = path;
+      image.src = sourcePath;
       return image;
     });
 
+    // Animation state
     this.currentFrameIndex = 0;
-    this.accumulatedFrameTime = 0;
+    this.accumulatedTime = 0;
   }
 
   reset() {
     this.currentFrameIndex = 0;
-    this.accumulatedFrameTime = 0;
+    this.accumulatedTime = 0;
   }
 
   update(deltaTimeInFrames = 1) {
-    const framesPerAnimationStep = 60 / this.framesPerSecond;
+    const frameDuration = 60 / this.framesPerSecond;
 
-    this.accumulatedFrameTime += deltaTimeInFrames;
+    this.accumulatedTime += deltaTimeInFrames;
 
-    while (this.accumulatedFrameTime >= framesPerAnimationStep) {
-      this.accumulatedFrameTime -= framesPerAnimationStep;
-
+    while (this.accumulatedTime >= frameDuration) {
+      this.accumulatedTime -= frameDuration;
       this.currentFrameIndex =
-        (this.currentFrameIndex + 1) % this.loadedImages.length;
+        (this.currentFrameIndex + 1) % this.images.length;
     }
   }
 
-  get currentImage() {
-    return this.loadedImages[this.currentFrameIndex];
+  get image() {
+    return this.images[this.currentFrameIndex];
   }
 
-  get isReady() {
-    const image = this.currentImage;
+  get ready() {
+    const image = this.image;
     return image && image.complete && image.naturalWidth > 0;
   }
 }
