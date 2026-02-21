@@ -278,7 +278,7 @@ export default class Character {
     const screenX = this.x - cameraX;
     const drawY = this.y - this.h;
 
-    // Hurt blink effect
+    // Hurt blink effect - only draw on even frames of the hurt timer
     // if (this.hurtActive && !this.dead) {
     //   if (Math.floor(this.hurtTimer / 3) % 2 === 0) return;
     // }
