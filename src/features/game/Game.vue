@@ -120,8 +120,6 @@ onBeforeUnmount(() => {
 .game-wrap {
   position: relative;
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
 }
 
 /* Canvas styles */
