@@ -189,19 +189,6 @@ export default class Game {
     ------------------------------------------------------------------------ */
 
     this.gameWorld.update(deltaTimeInFrames);
-
-    /* ------------------------------------------------------------------------
-      Debug section (optional)
-      - Camera auto-scroll: moves camera to the right
-      - Console logging: prints camera position once per "frame unit" interval
-    ------------------------------------------------------------------------ */
-
-    if (this.debugAutoScroll) {
-      this.cameraSystem.x += 100 * deltaTimeInFrames;
-    }
-
-    this.debugLogTimerInFrames =
-      (this.debugLogTimerInFrames ?? 0) + deltaTimeInFrames;
   }
 
   /* ==========================================================================
@@ -211,7 +198,7 @@ export default class Game {
   ========================================================================== */
 
   render() {
-    /* ------------------------------------------------------------------------
+    /* ------------------------------------------------------------------------a
       Local references for readability
     ------------------------------------------------------------------------ */
 
