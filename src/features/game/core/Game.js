@@ -46,6 +46,8 @@ export default class Game {
     this.isGameRunning = false;
     this.requestAnimationFrameId = null;
 
+    
+
     /* ------------------------------------------------------------------------
       Core systems and helpers
       - backgroundRenderer: draws the background based on camera position
@@ -90,9 +92,9 @@ export default class Game {
       ✅ ADD: listen to window resize
     ------------------------------------------------------------------------ */
 
-    // window.addEventListener("resize", () => {
-    //   this.resizeCanvasToDisplaySize();
-    // });
+    window.addEventListener("resize", () => {
+      this.resizeCanvasToDisplaySize();
+    });
   }
 
   /* ==========================================================================
