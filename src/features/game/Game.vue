@@ -29,7 +29,7 @@
         <!-- ✅ Button-Layer über dem Bild -->
         <div class="screen-actions" @click.stop>
           <n-button
-            type="tertiary"
+            type="primary"
             secondary
             size="large"
             @click="onOverlayClick">
