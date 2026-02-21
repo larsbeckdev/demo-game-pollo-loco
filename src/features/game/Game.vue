@@ -25,7 +25,7 @@
       <img class="screen-image" :src="screenImage" alt="" />
 
       <div class="screen-actions" @click.stop>
-        <n-button type="primary" size="large" @click="onOverlayClick">
+        <n-button type="primary"  size="large" @click="onOverlayClick">
           {{ screen === "intro" ? "Start" : "Nochmal" }}
         </n-button>
       </div>
