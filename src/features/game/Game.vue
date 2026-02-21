@@ -31,7 +31,7 @@
           <n-button
             class="start-button"
             secondary
-            type="info"
+            type="tertiary"
             size="large"
             @click="onOverlayClick">
             {{ screen === "intro" ? "Start" : "Nochmal" }}
@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
 .start-button {
   padding: 12px 36px;
   font-size: 1.25rem;
-  /* color: white; */
+  color: #fff;
 }
 
 .start-button .n-button__content .n-button__border {
