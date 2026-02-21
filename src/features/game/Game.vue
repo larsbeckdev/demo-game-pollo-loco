@@ -192,7 +192,10 @@ onBeforeUnmount(() => {
   font-size: 1.25rem;
   color: white;
   background: var(--ds-overlay);
-  border: 0px solid transparent;
+}
+
+.start-button .n-button__state-border {
+  border: none !important;
 }
 
 /* ✅ Optional: Lesbarkeit unten verbessern */
