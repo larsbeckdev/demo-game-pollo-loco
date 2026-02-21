@@ -1,7 +1,7 @@
 import Background from "@/features/game/rendering/Background.js"; // Background renderer
 import Camera from "@/features/game/rendering/Camera.js"; // Camera system
-import Keyboard from "./input/Keyboard.js"; // Input handler
-import World from "./world/World.js"; // Game world
+import Keyboard from "@/features/game/core/input/Keyboard.js"; // Input handler
+import World from "@/features/game/core/world/World.js"; // Game world
 
 export default class Game {
   constructor(canvas) {
