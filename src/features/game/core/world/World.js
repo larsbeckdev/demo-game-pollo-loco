@@ -1,4 +1,5 @@
 // src/classes/core/World.js
+
 import Character from "@/features/game/entities/character/Character.js";
 import Enemy from "@/features/game/entities/enemy/Enemy.js";
 import { level1 } from "@/features/game/levels/level1.js";
@@ -8,48 +9,82 @@ import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
 
 export default class World {
-  constructor({ canvas, camera, keyboard, level = level1 } = {}) {
-    this.canvas = canvas;
-    this.camera = camera;
-    this.keyboard = keyboard;
-    this.level = level;
+  constructor({
+    canvasElement,
+    cameraSystem,
+    keyboardInput,
+    levelConfiguration = level1,
+  } = {}) {
+    this.canvasElement = canvasElement; // Canvas DOM element
+    this.cameraSystem = cameraSystem; // Camera reference
+    this.keyboardInput = keyboardInput; // Keyboard input reference
+    this.levelConfiguration = levelConfiguration; // Level configuration object
 
-    // Ground setup
-    this.groundY = this.canvas.height - (this.level.groundOffset ?? 40);
+    // --------------------------------------------------
+    // Ground configuration
+    // --------------------------------------------------
+    this.groundPositionY =
+      this.canvasElement.height - (this.levelConfiguration.groundOffset ?? 40);
 
-    // Player
-    this.character = new Character({ groundY: this.groundY });
+    // --------------------------------------------------
+    // Player entity
+    // --------------------------------------------------
+    this.playerCharacter = new Character({
+      groundPositionY: this.groundPositionY,
+    });
 
-    // Entities
-    this.enemies = [new Enemy({ x: 600, groundY: this.groundY, scale: 0.5 })];
-    this.collectables = [];
-    this.bottles = [];
+    // --------------------------------------------------
+    // Entity collections
+    // --------------------------------------------------
+    this.enemyEntities = [
+      new Enemy({
+        x: 600,
+        groundPositionY: this.groundPositionY,
+        scale: 0.5,
+      }),
+    ];
 
+    this.collectableEntities = [];
+    this.throwableBottleEntities = [];
+
+    // --------------------------------------------------
     // World size
-    this.worldWidth = this.level.worldWidth ?? 4000;
+    // --------------------------------------------------
+    this.worldWidth = this.levelConfiguration.worldWidth ?? 4000;
 
+    // --------------------------------------------------
     // Systems
+    // --------------------------------------------------
     this.movementSystem = new MovementSystem(this);
     this.throwSystem = new ThrowSystem(this);
     this.collisionSystem = new CollisionSystem(this);
   }
 
-  update(dt) {
-    // Reihenfolge ist wichtig:
-    // 1) Movement (Input/Player/Kamera)
-    this.movementSystem.update(dt);
+  update(deltaTimeInFrames) {
+    // Order is important:
 
-    // 2) Throw (Bottles erzeugen + Bottles updaten)
-    this.throwSystem.update(dt);
+    // 1) Movement system (input, player, camera)
+    this.movementSystem.update(deltaTimeInFrames);
 
-    // 3) Collisions + Enemies update
-    this.collisionSystem.update(dt);
+    // 2) Throw system (create + update bottles)
+    this.throwSystem.update(deltaTimeInFrames);
+
+    // 3) Collision system (collisions + enemy updates)
+    this.collisionSystem.update(deltaTimeInFrames);
   }
 
-  draw(ctx) {
-    this.character.draw(ctx, this.camera.x);
+  draw(canvasContext2D) {
+    // Draw player
+    this.playerCharacter.draw(canvasContext2D, this.cameraSystem.x);
 
-    for (const enemy of this.enemies) enemy.draw(ctx, this.camera.x);
-    for (const bottle of this.bottles) bottle.draw(ctx, this.camera.x);
+    // Draw enemies
+    for (const enemyEntity of this.enemyEntities) {
+      enemyEntity.draw(canvasContext2D, this.cameraSystem.x);
+    }
+
+    // Draw bottles
+    for (const bottleEntity of this.throwableBottleEntities) {
+      bottleEntity.draw(canvasContext2D, this.cameraSystem.x);
+    }
   }
 }
