@@ -194,8 +194,9 @@ onBeforeUnmount(() => {
   background: var(--ds-overlay);
 }
 
-.start-button span div {
+.start-button .n-button__content .n-button__border {
   border: none !important;
+  border-color: red;
 }
 
 /* ✅ Optional: Lesbarkeit unten verbessern */
