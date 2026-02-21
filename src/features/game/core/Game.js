@@ -90,9 +90,9 @@ export default class Game {
       ✅ ADD: listen to window resize
     ------------------------------------------------------------------------ */
 
-    window.addEventListener("resize", () => {
-      this.resizeCanvasToDisplaySize();
-    });
+    // window.addEventListener("resize", () => {
+    //   this.resizeCanvasToDisplaySize();
+    // });
   }
 
   /* ==========================================================================
