@@ -68,8 +68,10 @@ export default class ParallaxLayer {
 
     const scale = canvasHeight / imageHeight;
 
-    const drawWidth = imageWidth * scale;
-    const drawHeight = canvasHeight;
+    // ✅ CHANGE: avoid subpixel seams by snapping draw sizes to integers
+    const rawDrawWidth = imageWidth * scale;
+    const drawWidth = Math.ceil(rawDrawWidth);
+    const drawHeight = Math.ceil(canvasHeight);
 
     /* ------------------------------------------------------------------------
       Parallax offset calculation
@@ -77,7 +79,9 @@ export default class ParallaxLayer {
       - Use modulo to create seamless horizontal tiling
     ------------------------------------------------------------------------ */
 
-    const offsetX = -(cameraX * this.speed) % drawWidth;
+    // ✅ CHANGE: stable modulo (always positive)
+    const move = (cameraX * this.speed) % drawWidth;
+    const offsetX = -((move + drawWidth) % drawWidth);
 
     /* ------------------------------------------------------------------------
       Horizontal tiling
@@ -85,12 +89,21 @@ export default class ParallaxLayer {
       - Ensures there are no visible gaps when scrolling
     ------------------------------------------------------------------------ */
 
+    // ✅ CHANGE: small overlap to hide 1px gaps from scaling / resampling
+    const overlap = 2;
+
     for (
       let xPosition = offsetX - drawWidth;
       xPosition < canvasWidth + drawWidth;
       xPosition += drawWidth
     ) {
-      ctx.drawImage(this.img, xPosition, this.y, drawWidth, drawHeight);
+      ctx.drawImage(
+        this.img,
+        Math.round(xPosition), // ✅ CHANGE: pixel snapping
+        Math.round(this.y), // ✅ CHANGE: pixel snapping
+        drawWidth + overlap, // ✅ CHANGE: overlap
+        drawHeight,
+      );
     }
   }
 }
