@@ -31,7 +31,7 @@
           <n-button
             class="start-button"
             secondary
-            type="tertiary"
+            type="info"
             size="large"
             @click="onOverlayClick">
             {{ screen === "intro" ? "Start" : "Nochmal" }}
