@@ -85,6 +85,9 @@ export default class Game {
 
     this.debugAutoScroll = false;
     this.debugLogTimerInFrames = 0;
+
+    this.debugEnabled = true;
+    this.debugFrames = 0;
   }
 
   /* ==========================================================================
