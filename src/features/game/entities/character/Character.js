@@ -279,9 +279,9 @@ export default class Character {
     const drawY = this.y - this.h;
 
     // Hurt blink effect
-    if (this.hurtActive && !this.dead) {
-      if (Math.floor(this.hurtTimer / 3) % 2 === 0) return;
-    }
+    // if (this.hurtActive && !this.dead) {
+    //   if (Math.floor(this.hurtTimer / 3) % 2 === 0) return;
+    // }
 
     ctx.save();
 
