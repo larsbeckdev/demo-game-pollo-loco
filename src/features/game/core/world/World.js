@@ -46,8 +46,10 @@ export default class World {
       - If the level does not define an offset, a default value is used
     ------------------------------------------------------------------------ */
 
-    const groundOffsetFromLevel =
-      this.level.groundOffset !== undefined ? this.level.groundOffset : 40;
+    // const groundOffsetFromLevel =
+    //   this.level.groundOffset !== undefined ? this.level.groundOffset : 40;
+
+    // this.groundY = this.canvas.height - groundOffsetFromLevel;
 
     this.groundY = 398;
 
