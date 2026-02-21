@@ -18,7 +18,8 @@
     <div
       v-if="screen !== 'playing'"
       class="screen-overlay"
-      @click="onOverlayClick">
+      @click="onOverlayClick"
+    >
       <img class="screen-image" :src="screenImage" alt="" />
 
       <div class="screen-actions">
@@ -47,10 +48,8 @@ const screen = ref("intro");
 
 // ✅ NEU: overlay image url
 const screenImage = computed(() => {
-  if (screen.value === "intro")
-    return "/images/9_intro_outro_screens/start/startscreen_1.png";
-  if (screen.value === "win")
-    return "/images/9_intro_outro_screens/You won, you lost/You Win A.png";
+  if (screen.value === "intro") return "/images/9_intro_outro_screens/start/startscreen_1.png";
+  if (screen.value === "win") return "/images/9_intro_outro_screens/You won, you lost/You Win A.png";
   return "/images/9_intro_outro_screens/You won, you lost/You lost.png";
 });
 
@@ -186,8 +185,7 @@ onBeforeUnmount(() => {
   aspect-ratio: auto;
   border-radius: 0;
 }
-</style>
-<template>
+</style><template>
   <!-- Game container -->
   <div ref="wrap" class="game-wrap">
     <!-- Render canvas -->
@@ -207,7 +205,8 @@ onBeforeUnmount(() => {
     <div
       v-if="screen !== 'playing'"
       class="screen-overlay"
-      @click="onOverlayClick">
+      @click="onOverlayClick"
+    >
       <img class="screen-image" :src="screenImage" alt="" />
 
       <div class="screen-actions">
@@ -236,10 +235,8 @@ const screen = ref("intro");
 
 // ✅ NEU: overlay image url
 const screenImage = computed(() => {
-  if (screen.value === "intro")
-    return "/images/9_intro_outro_screens/start/startscreen_1.png";
-  if (screen.value === "win")
-    return "/images/9_intro_outro_screens/You won, you lost/You Win A.png";
+  if (screen.value === "intro") return "/images/9_intro_outro_screens/start/startscreen_1.png";
+  if (screen.value === "win") return "/images/9_intro_outro_screens/You won, you lost/You Win A.png";
   return "/images/9_intro_outro_screens/You won, you lost/You lost.png";
 });
 
