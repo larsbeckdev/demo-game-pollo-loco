@@ -23,7 +23,7 @@ export default class Character {
 
     this.speed = 4.8;
     this.jumpForce = 14;
-    this.gravity = 0.9;
+    this.gravity = 0.2;
 
     this.facing = 1;
     this.onGround = true;
