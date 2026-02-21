@@ -44,11 +44,6 @@ export default class World {
 
     // 3) Collisions + Enemies update
     this.collisionSystem.update(dt);
-
-    // Game.js oder World.js update(dt)
-    if (this.debugAutoScroll) {
-      this.camera.x += 200 * dt;
-    }
   }
 
   draw(ctx) {
