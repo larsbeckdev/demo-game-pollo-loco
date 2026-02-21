@@ -56,7 +56,7 @@ export default class Game {
     // ----------------------------------------------
     // Debug: Auto Scroll
     if (this.debugAutoScroll) {
-      this.camera.x += 300 * dt;
+      this.camera.x += 100 * dt;
     }
 
     this._logTimer = (this._logTimer ?? 0) + dt;
