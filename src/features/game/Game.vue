@@ -147,7 +147,7 @@ onBeforeUnmount(() => {
   z-index: 20;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--ds-overlay);
   cursor: pointer;
   padding: 16px;
 }
