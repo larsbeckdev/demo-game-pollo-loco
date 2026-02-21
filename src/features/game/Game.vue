@@ -169,9 +169,9 @@ onBeforeUnmount(() => {
 }
 
 .screen-btn {
-  padding: 10px 16px;
+  /* padding: 10px 16px;
   border-radius: 12px;
-  border: 0;
+  border: 0; */
 }
 
 /* Fullscreen wrapper */
