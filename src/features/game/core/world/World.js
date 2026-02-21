@@ -77,7 +77,7 @@ export default class World {
     this.collectables = [
       new Coin({ x: 420, y: this.groundY - 120 }), // add
       new Coin({ x: 480, y: this.groundY - 120 }), // add
-      new SalsaBottlePickup({ x: 680, y: this.groundY - 70 }), // add
+      // new SalsaBottlePickup({ x: 680, y: this.groundY - 70 }), // add
     ]; // add
 
     this.bottles = [];
