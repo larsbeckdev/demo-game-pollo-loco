@@ -46,8 +46,6 @@ export default class Game {
     this.isGameRunning = false;
     this.requestAnimationFrameId = null;
 
-    
-
     /* ------------------------------------------------------------------------
       Core systems and helpers
       - backgroundRenderer: draws the background based on camera position
@@ -87,55 +85,6 @@ export default class Game {
 
     this.debugAutoScroll = false;
     this.debugLogTimerInFrames = 0;
-
-    /* ------------------------------------------------------------------------
-      ✅ ADD: listen to window resize
-    ------------------------------------------------------------------------ */
-
-    window.addEventListener("resize", () => {
-      this.resizeCanvasToDisplaySize();
-    });
-  }
-
-  /* ==========================================================================
-    ✅ ADD: Canvas resize helper
-    - Fixes devicePixelRatio scaling issues
-  ========================================================================== */
-
-  resizeCanvasToDisplaySize() {
-    const canvas = this.canvasElement;
-    const context = this.canvasContext2D;
-
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
-    const boundingClientRect = canvas.getBoundingClientRect();
-
-    const displayWidth = Math.round(boundingClientRect.width);
-    const displayHeight = Math.round(boundingClientRect.height);
-
-    const newWidth = Math.round(displayWidth * devicePixelRatio);
-    const newHeight = Math.round(displayHeight * devicePixelRatio);
-
-    const sizeChanged =
-      canvas.width !== newWidth || canvas.height !== newHeight;
-
-    if (sizeChanged) {
-      canvas.width = newWidth;
-      canvas.height = newHeight;
-
-      /* ----------------------------------------------------------------------
-        IMPORTANT:
-        - Scale drawing operations so 1 unit = 1 CSS pixel
-      ---------------------------------------------------------------------- */
-
-      context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-
-      console.log("[DEBUG] Canvas resized:", {
-        width: canvas.width,
-        height: canvas.height,
-        dpr: devicePixelRatio,
-      });
-    }
   }
 
   /* ==========================================================================
