@@ -7,7 +7,13 @@
     <!-- UI overlay -->
     <div class="ui">
       <!-- Fullscreen button -->
-      <n-button size="small" type="tertiary" circle @click="toggleFullscreen">
+      <n-button
+        size="small"
+        type="tertiary"
+        strong
+        secondary
+        circle
+        @click="toggleFullscreen">
         <n-icon>
           <Fullscreen />
         </n-icon>
@@ -159,7 +165,7 @@ onBeforeUnmount(() => {
   /* max-height: 80vh; */
   border-radius: 8px;
   display: block;
-  width: 100%; 
+  width: 100%;
   height: 100%;
 }
 
