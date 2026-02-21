@@ -23,8 +23,6 @@ import { ref, onMounted, onBeforeUnmount } from "vue"; // Vue lifecycle
 import Game from "@/features/game/core/Game.js"; // Game class
 import { Fullscreen } from "lucide-vue-next"; // Icon import
 
-
-
 // DOM references
 const wrap = ref(null); // Wrapper ref
 const canvas = ref(null); // Canvas ref
