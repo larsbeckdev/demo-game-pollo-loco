@@ -8,6 +8,7 @@
 import EnemyUpdateSystem from "./EnemyUpdateSystem.js";
 import PlayerEnemyCollision from "./PlayerEnemyCollision.js";
 import BottleEnemyCollision from "./BottleEnemyCollision.js";
+import CollectableCollisionSystem from "./CollectableCollisionSystem.js"; // add
 
 /* ============================================================================
   CollisionSystem
@@ -43,6 +44,7 @@ export default class CollisionSystem {
     this.enemyUpdate = new EnemyUpdateSystem(world);
     this.playerEnemyCollision = new PlayerEnemyCollision(world);
     this.bottleEnemyCollision = new BottleEnemyCollision(world);
+    this.collectableCollision = new CollectableCollisionSystem(world); // add
   }
 
   /* ==========================================================================
@@ -76,5 +78,13 @@ export default class CollisionSystem {
     ------------------------------------------------------------------------ */
 
     this.bottleEnemyCollision.update();
+
+    /* ------------------------------------------------------------------------
+      4) Handle player ↔ collectables collisions // add
+      - Pick up coins / bottles etc.
+      - Updates stats + removes collected items
+    ------------------------------------------------------------------------ */
+
+    this.collectableCollision.update(); // add
   }
 }
