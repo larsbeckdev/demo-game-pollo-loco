@@ -1,5 +1,3 @@
-// src/features/game/systems/throw/BottleSpawnSystem.js
-
 /* ============================================================================
   Imports
   - Bottle: projectile entity that can be thrown by the player
