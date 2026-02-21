@@ -247,11 +247,5 @@ export default class Game {
     ------------------------------------------------------------------------ */
 
     this.gameWorld.draw(canvasContext2D);
-
-    /* ------------------------------------------------------------------------
-      Optional fullscreen button (if you implement it later)
-    ------------------------------------------------------------------------ */
-
-    // this.fullscreenButton.draw(canvasContext2D);
   }
 }
