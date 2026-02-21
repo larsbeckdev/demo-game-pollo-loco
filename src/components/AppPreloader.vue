@@ -3,8 +3,6 @@
     <div v-if="visible" class="preloader">
       <n-card class="card" :bordered="false">
         <n-space vertical size="large">
-          <!-- <n-spin size="large" /> -->
-
           <div class="title">Loading… {{ Math.round(progress * 100) }}%</div>
 
           <n-progress type="line" :percentage="Math.round(progress * 100)" />
