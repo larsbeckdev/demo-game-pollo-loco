@@ -45,14 +45,14 @@ onMounted(() => {
   game = new Game(c); // Create game
   game.start(); // Start loop
 
-  console.log("[GameView] mounted");
+  console.log("[Game] mounted");
 });
 
 // Cleanup lifecycle
 onBeforeUnmount(() => {
   game?.stop(); // Stop loop
 
-  console.log("[GameView] beforeUnmount");
+  console.log("[Game] beforeUnmount");
 });
 </script>
 
