@@ -50,6 +50,8 @@ export default class Character {
     // Animations
     this.animations = createCharacterAnimations();
     this.currentAnimationKey = "idle";
+
+    console.log("[Character] groundY:", groundY);
   }
 
   handleInput(keyboard) {
