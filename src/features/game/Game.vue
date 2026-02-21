@@ -29,6 +29,7 @@
         <!-- ✅ Button-Layer über dem Bild -->
         <div class="screen-actions" @click.stop>
           <n-button
+            class="start-button"
             type="primary"
             size="large"
             @click="onOverlayClick">
@@ -184,6 +185,14 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center; /* unten mittig */
   /* padding: 18px; */
+}
+
+.start-button {
+  padding: 12px 36px;
+  font-size: 1.25rem;
+  color: white;
+  background: var(--ds-overlay);
+  border: 0px solid transparent;
 }
 
 /* ✅ Optional: Lesbarkeit unten verbessern */
