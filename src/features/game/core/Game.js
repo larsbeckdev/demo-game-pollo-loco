@@ -51,18 +51,22 @@ export default class Game {
   update(dt) {
     this.world.update(dt); // Update entities
 
-    // Game.js oder World.js update(dt)
+    // ----------------------------------------------
+    // DEBUG ENDE
+    // ----------------------------------------------
     // Debug: Auto Scroll
     if (this.debugAutoScroll) {
-      this.camera.x += 200 * dt; // px per second
+      this.camera.x += 300 * dt;
     }
 
-    // 🔍 Nur 1x pro Sekunde loggen (kein Spam!)
     this._logTimer = (this._logTimer ?? 0) + dt;
     if (this._logTimer >= 1) {
       console.log("[DEBUG] camera.x:", this.camera.x.toFixed(2));
       this._logTimer = 0;
     }
+    // ----------------------------------------------
+    // DEBUG ENDE
+    // ----------------------------------------------
   }
 
   render() {
