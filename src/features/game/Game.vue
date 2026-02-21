@@ -137,7 +137,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 10;
+  z-index: 50;
 }
 
 /* ✅ NEU: screen overlay */
