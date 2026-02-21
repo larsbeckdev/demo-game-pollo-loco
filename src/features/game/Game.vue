@@ -22,13 +22,14 @@
 
     <!-- ✅ NEU: Intro/Outro Overlay -->
     <div v-if="screen !== 'playing'" class="screen-overlay">
-      <img class="screen-image" :src="screenImage" alt="" />
-
-      <div class="screen-actions" @click.stop>
-        <n-button type="primary" secondary size="large" @click="onOverlayClick">
-          {{ screen === "intro" ? "Start" : "Nochmal" }}
-        </n-button>
-      </div>
+      <n-card class="screen-card" :bordered="false">
+        <img class="screen-image" :src="screenImage" alt="" />
+        <div class="screen-actions">
+          <n-button type="primary" size="large" @click="onOverlayClick">
+            {{ screen === "intro" ? "Start" : "Nochmal" }}
+          </n-button>
+        </div>
+      </n-card>
     </div>
   </div>
 </template>
