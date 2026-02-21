@@ -6,7 +6,7 @@
 
 <script setup>
 import { onMounted } from "vue";
-import AppPreloader from "@/components/AppPreloader.vue";
+import AppPreloader from "@/components/preloader/AppPreloader.vue";
 import { useAppPreloader } from "@/composables/useAppPreloader";
 
 const { visible, progress, message, setProgress, finish } = useAppPreloader();
