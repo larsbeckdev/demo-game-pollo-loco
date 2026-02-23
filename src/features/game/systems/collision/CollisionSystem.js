@@ -94,7 +94,8 @@ export default class CollisionSystem {
         }
 
         if (typeof player.takeDamage === "function") {
-          player.takeDamage(20);
+          const damage = enemy.damage ?? 10; // fallback falls nicht gesetzt
+          player.takeDamage(damage);
           const hpPercent = Math.round((player.hp / player.maxHp) * 100);
           world.stats?.setHealth?.(hpPercent);
         }
