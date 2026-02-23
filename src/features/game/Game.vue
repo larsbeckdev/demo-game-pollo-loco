@@ -111,13 +111,16 @@
         </div>
 
         <n-space justify="end" :size="8">
-          <n-button @click="closeSettings">Schließen</n-button>
+          <n-button @click="closeSettings"> Schließen </n-button>
 
-          <n-button type="warning" secondary @click="restartGame">
-            Restart
-          </n-button>
+          <!-- ✅ Restart & Exit NUR während des Spiels -->
+          <template v-if="screen === 'playing'">
+            <n-button type="warning" secondary @click="restartGame">
+              Restart
+            </n-button>
 
-          <n-button type="error" @click="exitToHome"> Verlassen </n-button>
+            <n-button type="error" @click="exitToHome"> Verlassen </n-button>
+          </template>
         </n-space>
       </n-space>
     </n-modal>
