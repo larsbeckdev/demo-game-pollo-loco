@@ -366,6 +366,7 @@ class ChickenNormal extends EnemyBase {
       walkFps: 8,
       deadImageSrc: `${base}/2_dead/dead.png`,
       deathLifetime: 120,
+      damage: 10,
     });
   }
 }
@@ -399,6 +400,7 @@ class ChickenSmall extends EnemyBase {
       walkFps: 10,
       deadImageSrc: `${base}/2_dead/dead.png`,
       deathLifetime: 120,
+      damage: 5,
     });
   }
 }
@@ -433,6 +435,7 @@ class BossChicken extends EnemyBase {
       walkFps: 6,
       deadImageSrc: `${base}/5_dead/G26.png`,
       deathLifetime: 240,
+      damage: 20,
     });
 
     this.maxHp = 5;
