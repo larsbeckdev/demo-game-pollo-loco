@@ -19,6 +19,7 @@ export default class Game {
       canvas: this.canvasElement,
       camera: this.cameraSystem,
       keyboard: this.keyboardInput,
+      level: level2, 
     });
 
     this.lastFrameTimestampMilliseconds = 0;
