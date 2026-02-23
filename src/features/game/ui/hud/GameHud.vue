@@ -1,19 +1,32 @@
 <template>
   <div class="hud" aria-hidden="true">
+    <!-- LEFT: one card for 3 bars -->
     <div class="hud-left">
-      <img class="bar" :src="healthSrc" alt="" />
-      <img class="bar" :src="coinSrc" alt="" />
-      <img class="bar" :src="bottleSrc" alt="" />
+      <n-card class="hud-card" size="small" :bordered="false">
+        <div class="hud-bars">
+          <img class="bar" :src="healthSrc" alt="" />
+          <img class="bar" :src="coinSrc" alt="" />
+          <img class="bar" :src="bottleSrc" alt="" />
+        </div>
+      </n-card>
     </div>
 
+    <!-- RIGHT: boss card (optional) -->
     <div class="hud-right">
-      <img v-if="showBoss" class="bar boss" :src="bossSrc" alt="" />
+      <n-card
+        v-if="showBoss"
+        class="hud-card hud-card--boss"
+        size="small"
+        :bordered="false">
+        <img class="bar boss" :src="bossSrc" alt="" />
+      </n-card>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
+import { NCard } from "naive-ui";
 import {
   healthBarSrc,
   coinBarSrc,
@@ -53,10 +66,35 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
   gap: 10px;
 }
 
+/* Card wrapper */
+.hud-card {
+  pointer-events: auto; /* enable interactions if you ever add buttons/tooltips */
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
+/* inner layout */
+.hud-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* optional: make boss card a bit tighter visually */
+.hud-card--boss :deep(.n-card__content) {
+  padding: 10px;
+}
+
+/* control padding for left card */
+.hud-card :deep(.n-card__content) {
+  padding: 10px;
+}
+
 .bar {
   width: 150px;
   height: auto;
   image-rendering: auto;
+  display: block;
 }
 
 .boss {
