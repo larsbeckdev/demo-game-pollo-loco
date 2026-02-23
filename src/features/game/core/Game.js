@@ -55,8 +55,14 @@ export default class Game {
   loadLevel(index) {
     this.levelIndex = Math.max(0, Math.min(index, LEVELS.length - 1));
 
+    // stop dt spikes after level switch
+    this.lastFrameTimestampMilliseconds = 0;
+
     // reset camera
     this.cameraSystem.x = 0;
+
+    // optional: reset debug counter
+    this.debug.frameCount = 0;
 
     // create new world instance
     this.gameWorld = new World({
@@ -65,6 +71,10 @@ export default class Game {
       keyboard: this.keyboardInput,
       level: LEVELS[this.levelIndex],
     });
+
+    // IMPORTANT: start state should be intro by default
+    // (Game.vue sets it to "playing" on Start)
+    this.gameWorld.state = "intro";
 
     if (this.debug.enabled) {
       console.log(
