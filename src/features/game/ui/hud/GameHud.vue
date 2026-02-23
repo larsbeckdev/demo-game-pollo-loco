@@ -75,8 +75,7 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
   pointer-events: auto; /* enable interactions if you ever add buttons/tooltips */
   border-radius: 8px;
   backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.2);
-  padding: 6px;
+  background: transparent;
 }
 
 /* inner layout */
