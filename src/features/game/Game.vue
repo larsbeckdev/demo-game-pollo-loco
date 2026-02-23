@@ -80,6 +80,7 @@
       </div>
     </div>
 
+    <!-- ✅ Settings Modal -->
     <n-modal
       v-model:show="showSettings"
       preset="card"
@@ -88,13 +89,21 @@
       <n-space vertical :size="14">
         <div>
           <div style="font-weight: 600; margin-bottom: 6px">Level</div>
+
           <n-select
             v-model:value="selectedLevel"
             :options="levelOptions"
             :disabled="screen === 'playing'" />
-          <n-button type="primary" secondary @click="applySelectedLevel">
+
+          <n-button
+            style="margin-top: 10px"
+            type="primary"
+            secondary
+            :disabled="screen === 'playing'"
+            @click="applySelectedLevel">
             Level laden
           </n-button>
+
           <div style="opacity: 0.75; font-size: 12px; margin-top: 6px">
             (Levelwechsel ist deaktiviert während du spielst – erst im
             Intro/Endscreen.)
@@ -118,6 +127,7 @@
 <script setup>
 // Vue imports
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
 
 // Game
 import Game from "@/features/game/core/Game.js";
@@ -137,6 +147,8 @@ function debugLog(...args) {
   if (!DEBUG) return;
   console.log(...args);
 }
+
+const router = useRouter();
 
 /* ============================================================================
   DOM refs
@@ -184,7 +196,7 @@ function syncHud() {
 const showSettings = ref(false);
 
 // Level selection (1-4)
-const selectedLevel = ref(2); // default: Level 2, falls du willst
+const selectedLevel = ref(2); // default: Level 2
 
 const levelOptions = [
   { label: "Level 1", value: 1 },
@@ -193,30 +205,35 @@ const levelOptions = [
   { label: "Level 4", value: 4 },
 ];
 
+function openSettings() {
+  showSettings.value = true;
+}
+
+function closeSettings() {
+  showSettings.value = false;
+}
+
 function applySelectedLevel() {
-  // Block during gameplay (optional but safer)
+  // Block during gameplay
   if (screen.value === "playing") return;
 
-  // Wenn du Game.js mit loadLevel(index) hast:
-  // value 1..4 -> index 0..3
   const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
 
   if (typeof game?.loadLevel === "function") {
     game.loadLevel(idx);
+    debugLog("[UI] Level loaded via game.loadLevel()", { idx });
   } else {
-    // Fallback: wenn Game.js noch keine loadLevel Methode hat,
-    // dann rebuild komplett (wie restart) – aber Level müssten wir im Game ctor setzen.
     debugLog("[UI] applySelectedLevel: game.loadLevel missing");
   }
 
-  // im Intro bleiben
+  // stay in intro
   screen.value = "intro";
   syncHud();
+  closeSettings();
 }
 
 /* ============================================================================
   Overlay Image Mapping
-  - Passe die Pfade an deine echten Dateien an
 ============================================================================ */
 
 const screenImage = computed(() => {
@@ -243,10 +260,28 @@ function toggleFullscreen() {
 }
 
 /* ============================================================================
+  Exit to Home
+  - Stops game, clears HUD interval, navigates home
+============================================================================ */
+
+function exitToHome() {
+  closeSettings();
+
+  if (game?.__hudInterval) clearInterval(game.__hudInterval);
+  stopGame();
+
+  screen.value = "intro";
+
+  // Try named route first, fallback to "/"
+  router.push({ name: "home" }).catch(() => {
+    router.push("/").catch(() => {});
+  });
+
+  debugLog("[UI] exitToHome()");
+}
+
+/* ============================================================================
   Game Setup
-  - Erstellt Game Instanz
-  - HUD Sync Timer
-  - Win/Lose Callbacks
 ============================================================================ */
 
 function createGame() {
@@ -259,13 +294,18 @@ function createGame() {
 
   game = new Game(c);
 
+  // Keep selected level in sync if Game supports it
+  // If your Game constructor currently starts at level1 by default,
+  // you can call loadLevel here.
+  if (typeof game?.loadLevel === "function") {
+    const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
+    game.loadLevel(idx);
+  }
+
   // HUD sync interval (simple + stable)
   game.__hudInterval = setInterval(syncHud, 100);
 
-  // Callbacks (WICHTIG: Game.js muss diese auch wirklich aufrufen!)
-  // => In Game.update() muss sowas passieren:
-  //    if (world.state === "won") this.onWin?.();
-  //    if (world.state === "lost") this.onLose?.();
+  // Win/Lose Callbacks
   game.onWin = () => {
     screen.value = "win";
     game?.stop?.();
@@ -291,7 +331,7 @@ function createGame() {
 function startGame() {
   screen.value = "playing";
 
-  // ✅ allow world to run
+  // ✅ allow world to run (important because World.update freezes otherwise)
   if (game?.gameWorld) game.gameWorld.state = "playing";
 
   game?.start?.();
@@ -304,6 +344,8 @@ function stopGame() {
 }
 
 function restartGame() {
+  closeSettings();
+
   // cleanup old
   if (game?.__hudInterval) clearInterval(game.__hudInterval);
   stopGame();
@@ -313,11 +355,6 @@ function restartGame() {
   startGame();
 
   debugLog("[UI] restartGame()");
-}
-
-function onOverlayClick() {
-  if (screen.value === "intro") startGame();
-  else restartGame();
 }
 
 /* ============================================================================
@@ -348,10 +385,7 @@ onBeforeUnmount(() => {
   width: 100%;
   aspect-ratio: 16 / 9;
   display: block;
-
-  /* Tipp: Wenn dein Background sowieso alles zeichnet, lieber transparent */
   background: var(--ds-card-bg);
-
   border: 1px solid var(--ds-border);
   border-radius: 8px;
 }
@@ -396,7 +430,7 @@ onBeforeUnmount(() => {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* alternativ: contain */
+  object-fit: cover;
   display: block;
 }
 
