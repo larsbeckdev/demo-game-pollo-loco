@@ -143,6 +143,13 @@ export default class World {
       bottle.update?.(dt);
     }
 
+    // ✅ Freeze world when not playing (prevents post-win damage / spawns)
+    if (this.state !== "playing") {
+      // Optional: still tick debug counter
+      if (this._dbg.enabled) this._dbg.frameCounter++;
+      return;
+    }
+
     // -----------------------------------------------------
     // 3) Boss spawn at end of level
     // -----------------------------------------------------
