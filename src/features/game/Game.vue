@@ -129,20 +129,12 @@
 </template>
 
 <script setup>
-// Vue imports
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, onActivated } from "vue";
 import { useRouter } from "vue-router";
-
-// Game
 import Game from "@/features/game/core/Game.js";
-
-// UI
 import { Fullscreen, Settings } from "lucide-vue-next";
 import GameHud from "@/features/game/ui/hud/GameHud.vue";
 
-/* ============================================================================
-  DEBUG (Abgabe: auf false lassen)
-============================================================================ */
 const DEBUG = false;
 function debugLog(...args) {
   if (!DEBUG) return;
@@ -151,21 +143,12 @@ function debugLog(...args) {
 
 const router = useRouter();
 
-/* ============================================================================
-  DOM refs
-============================================================================ */
 const wrap = ref(null);
 const canvas = ref(null);
 let game = null;
 
-/* ============================================================================
-  Screen State
-============================================================================ */
 const screen = ref("intro");
 
-/* ============================================================================
-  HUD Stats
-============================================================================ */
 const hudStats = ref({
   health: 100,
   coins: 0,
@@ -185,13 +168,8 @@ function syncHud() {
   };
 }
 
-/* ============================================================================
-  Settings Modal
-============================================================================ */
 const showSettings = ref(false);
-
-// Level selection (1-4)
-const selectedLevel = ref(2); // default: Level 2
+const selectedLevel = ref(2);
 
 const levelOptions = [
   { label: "Level 1", value: 1 },
@@ -203,13 +181,11 @@ const levelOptions = [
 function openSettings() {
   showSettings.value = true;
 }
-
 function closeSettings() {
   showSettings.value = false;
 }
 
 function applySelectedLevel() {
-  // Block during gameplay
   if (screen.value === "playing") return;
 
   const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
@@ -217,107 +193,66 @@ function applySelectedLevel() {
   if (typeof game?.loadLevel === "function") {
     game.loadLevel(idx);
     debugLog("[UI] Level loaded via game.loadLevel()", { idx });
-  } else {
-    debugLog("[UI] applySelectedLevel: game.loadLevel missing");
   }
 
-  // stay in intro
   screen.value = "intro";
   syncHud();
   closeSettings();
 }
 
-/* ============================================================================
-  Overlay Image Mapping
-============================================================================ */
 const screenImage = computed(() => {
   if (screen.value === "intro")
     return "/images/9_intro_outro_screens/start/startscreen_1.png";
-
   if (screen.value === "win")
     return "/images/9_intro_outro_screens/You won, you lost/You Win A.png";
-
-  // lose
   return "/images/9_intro_outro_screens/You won, you lost/You lost.png";
 });
 
-/* ============================================================================
-  Fullscreen
-============================================================================ */
 function toggleFullscreen() {
   const el = wrap.value;
   if (!el) return;
-
   if (!document.fullscreenElement) el.requestFullscreen();
   else document.exitFullscreen();
 }
 
-/* ============================================================================
-  Exit to Home
-  - Stops game, clears HUD interval, navigates home
-============================================================================ */
-async function exitToHome() {
-  closeSettings();
-
-  // 1) Stop loop
+/* =========================================================
+  ✅ NEW: hard cleanup helper (prevents half-dead instances)
+========================================================= */
+function destroyGame() {
   try {
     game?.stop?.();
-  } catch (e) {
-    // ignore
-  }
+  } catch {}
 
-  // 2) Clear HUD interval
   if (game?.__hudInterval) {
     clearInterval(game.__hudInterval);
     game.__hudInterval = null;
   }
 
-  // 3) Drop ref
   game = null;
-
-  // 4) Reset UI state
-  screen.value = "intro";
-
-  // 5) Exit fullscreen
-  if (document.fullscreenElement) {
-    try {
-      await document.exitFullscreen();
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  // 6) Navigate home
-  router.push({ name: "home" }).catch(() => {
-    router.push("/").catch(() => {});
-  });
-
-  debugLog("[UI] exitToHome()");
 }
 
-/* ============================================================================
-  Game Setup
-============================================================================ */
-function createGame() {
+/* =========================================================
+  ✅ NEW: ensure game exists (fixes "frozen after exit")
+========================================================= */
+function ensureGame() {
+  if (game) return;
+
   const c = canvas.value;
   if (!c) return;
 
-  // Fixed internal resolution (CSS scales responsively)
   c.width = 800;
   c.height = 450;
 
   game = new Game(c);
 
-  // Keep selected level in sync if Game supports it
+  // keep selected level in sync
   if (typeof game?.loadLevel === "function") {
     const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
     game.loadLevel(idx);
   }
 
-  // HUD sync interval
   game.__hudInterval = setInterval(syncHud, 100);
 
-  // Win/Lose callbacks
   game.onWin = () => {
     screen.value = "win";
     game?.stop?.();
@@ -331,52 +266,79 @@ function createGame() {
   };
 
   syncHud();
-  debugLog("[UI] createGame()", { canvas: { w: c.width, h: c.height } });
+  debugLog("[UI] ensureGame() created");
 }
 
-/* ============================================================================
+/* =========================================================
   Start / Restart
-============================================================================ */
+========================================================= */
 function startGame() {
+  // ✅ if you exited before, game might be null
+  ensureGame();
+
   screen.value = "playing";
 
-  // allow world to run (important if World.update freezes when not playing)
+  // allow world to run
   if (game?.gameWorld) game.gameWorld.state = "playing";
 
   game?.start?.();
   debugLog("[UI] startGame()");
 }
 
-function stopGame() {
-  game?.stop?.();
-  debugLog("[UI] stopGame()");
-}
-
 function restartGame() {
   closeSettings();
 
-  // cleanup old
-  if (game?.__hudInterval) clearInterval(game.__hudInterval);
-  stopGame();
+  // ✅ always rebuild a clean instance
+  destroyGame();
+  ensureGame();
 
-  // rebuild fresh instance
-  createGame();
-  startGame();
+  screen.value = "playing";
+  if (game?.gameWorld) game.gameWorld.state = "playing";
+  game?.start?.();
 
   debugLog("[UI] restartGame()");
 }
 
-/* ============================================================================
+async function exitToHome() {
+  closeSettings();
+
+  destroyGame();
+  screen.value = "intro";
+
+  if (document.fullscreenElement) {
+    try {
+      await document.exitFullscreen();
+    } catch {}
+  }
+
+  // ✅ navigate safely (use your real route name OR "/" directly)
+  try {
+    await router.push({ name: "home" });
+  } catch {
+    await router.push("/").catch(() => {});
+  }
+
+  debugLog("[UI] exitToHome()");
+}
+
+/* =========================================================
   Lifecycle
-============================================================================ */
+========================================================= */
 onMounted(() => {
-  createGame(); // init but DO NOT auto-start
+  // only create once on first mount
+  ensureGame();
   debugLog("[UI] mounted -> waiting on intro");
 });
 
+// ✅ IMPORTANT if the route/view is KeepAlive cached:
+onActivated(() => {
+  // when coming back from home, ensure game exists again
+  ensureGame();
+  debugLog("[UI] activated -> ensureGame()");
+});
+
 onBeforeUnmount(() => {
-  stopGame();
-  if (game?.__hudInterval) clearInterval(game.__hudInterval);
+  destroyGame();
   debugLog("[UI] beforeUnmount -> cleaned up");
 });
 </script>
