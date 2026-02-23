@@ -190,6 +190,27 @@ const levelOptions = [
   { label: "Level 4", value: 4 },
 ];
 
+function applySelectedLevel() {
+  // Block during gameplay (optional but safer)
+  if (screen.value === "playing") return;
+
+  // Wenn du Game.js mit loadLevel(index) hast:
+  // value 1..4 -> index 0..3
+  const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
+
+  if (typeof game?.loadLevel === "function") {
+    game.loadLevel(idx);
+  } else {
+    // Fallback: wenn Game.js noch keine loadLevel Methode hat,
+    // dann rebuild komplett (wie restart) – aber Level müssten wir im Game ctor setzen.
+    debugLog("[UI] applySelectedLevel: game.loadLevel missing");
+  }
+
+  // im Intro bleiben
+  screen.value = "intro";
+  syncHud();
+}
+
 /* ============================================================================
   Overlay Image Mapping
   - Passe die Pfade an deine echten Dateien an
