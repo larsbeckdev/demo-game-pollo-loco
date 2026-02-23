@@ -9,6 +9,7 @@ import { level1 } from "@/features/game/levels/level1.js";
 import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
+import EnemySpawnSystem from "@/features/game/systems/enemy-spawn/EnemySpawnSystem.js";
 
 import Coin from "@/features/game/entities/collectables/Coin.js";
 import StatsStore from "@/features/game/core/stats/StatsStore.js";
@@ -67,6 +68,8 @@ export default class World {
       new ChickenSmall({ x: 900, groundY: this.groundY, scale: 0.5 }),
       new BossChicken({ x: 1800, groundY: this.groundY, scale: 1.0 }),
     ];
+
+    this.enemySpawnSystem = new EnemySpawnSystem(this);
 
     // coins
     this.coins = [
