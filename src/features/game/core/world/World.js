@@ -6,7 +6,7 @@ import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
 
-import Coin from "@/features/game/entities/coins/Coin.js";
+import Coin from "@/features/game/entities/collectables/Coin.js";
 import StatsStore from "@/features/game/core/stats/StatsStore.js";
 import SoundManager from "@/features/game/core/audio/SoundManager.js";
 
@@ -47,7 +47,9 @@ export default class World {
     this.sound = new SoundManager();
 
     this.sound.register("coin", "/audio/coin.mp3", { volume: 0.6 });
-    this.sound.register("bottle", "/audio/bottle.mp3", { volume: 0.6 });
+
+    // ✅ optional: nur drin lassen, wenn du wirklich irgendwo bottle-sounds nutzt
+    // this.sound.register("bottle", "/audio/bottle.mp3", { volume: 0.6 });
 
     // -----------------------------------------------------
     // Entities
@@ -55,6 +57,7 @@ export default class World {
 
     this.enemies = [new Enemy({ x: 600, groundY: this.groundY, scale: 0.5 })];
 
+    // ✅ collectables -> coins
     this.coins = [
       new Coin({ x: 420, y: this.groundY - 120 }),
       new Coin({ x: 480, y: this.groundY - 120 }),
@@ -147,8 +150,9 @@ export default class World {
       bottle.draw(ctx, this.camera.x);
     }
 
-    for (const item of this.coins) {
-      item.draw(ctx, this.camera.x);
+    // ✅ collectables -> coins
+    for (const coin of this.coins) {
+      coin.draw(ctx, this.camera.x);
     }
 
     // Throttled draw log
