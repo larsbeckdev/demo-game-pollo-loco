@@ -10,6 +10,7 @@
 
 /* ============================================================================
   FrameAnimation
+  - ONLY animation timing (no position / no x/y)
 ============================================================================ */
 
 class FrameAnimation {
@@ -25,13 +26,11 @@ class FrameAnimation {
     this.holdLast = holdLast;
 
     this.frame = 0;
-    this.acc = 0; // dt-units (bei dir: dt ~ 1 bei 60fps)
+    this.acc = 0;
 
-    // =====================================================
-    // DEBUG (spam-safe)
-    // =====================================================
+    // Debug (spam-safe)
     this._dbg = {
-      enabled: true, // <- ausschalten für Ruhe
+      enabled: false,
       id: Math.random().toString(16).slice(2, 6),
       lastLoopLogAt: 0,
     };
@@ -44,10 +43,8 @@ class FrameAnimation {
         holdLast: this.holdLast,
         sample: paths[0],
       });
-
-      if (!paths.length) {
+      if (!paths.length)
         console.warn(`[FrameAnim#${this._dbg.id}] WARNING: 0 frames`);
-      }
     }
   }
 
@@ -61,21 +58,13 @@ class FrameAnimation {
   }
 
   update(dt) {
-    if (!Number.isFinite(dt)) {
-      console.warn("[Enemy] dt invalid:", dt);
-      return;
-    }
+    // dt must be finite
+    if (!Number.isFinite(dt)) return;
 
-    // TEMP: 1x pro Sekunde loggen
-    if (!this._lastDbg) this._lastDbg = 0;
-    const now = performance.now();
-    if (now - this._lastDbg > 1000) {
-      console.log("[Enemy] update ok", { x: this.x, dt });
-      this._lastDbg = now;
-    }
-
+    // no need to animate if 0/1 frames
     if (this.images.length <= 1) return;
 
+    // your dt-unit: dt ~ 1 at 60fps → frameTime in "dt units"
     const frameTime = 60 / this.fps;
     this.acc += dt;
 
@@ -88,7 +77,6 @@ class FrameAnimation {
         if (this.loop) {
           this.frame = 0;
 
-          // loop log throttled (max 1x / 2s)
           if (this._dbg.enabled) {
             const now = performance.now();
             if (now - this._dbg.lastLoopLogAt > 2000) {
@@ -120,6 +108,7 @@ function makeFramePaths(base, names) {
 
 /* ============================================================================
   EnemyBase
+  - Movement + animation + drawing
 ============================================================================ */
 
 class EnemyBase {
@@ -151,7 +140,7 @@ class EnemyBase {
     deathLifetime = 999999, // dt-units
   } = {}) {
     this.x = x;
-    this.y = groundY; // ground line
+    this.y = groundY; // ground line (not top-left)
 
     this.baseWidth = baseWidth;
     this.baseHeight = baseHeight;
@@ -179,14 +168,13 @@ class EnemyBase {
     this.deathTimer = 0;
     this.deathLifetime = deathLifetime;
 
-    // =====================================================
-    // DEBUG (spam-safe)
-    // =====================================================
+    // Debug (spam-safe)
     this._dbg = {
-      enabled: false, // <- ausschalten für Ruhe
+      enabled: false, // <- set true to debug movement/draw
       id: Math.random().toString(16).slice(2, 6),
       lastDirection: this.direction,
       lastMoveLogAt: 0,
+      lastUpdateLogAt: 0,
       lastDrawSkipAt: 0,
       lastRemovalLogAt: 0,
     };
@@ -208,7 +196,27 @@ class EnemyBase {
   }
 
   update(dt) {
-    // dead state
+    if (!Number.isFinite(dt)) {
+      console.warn("[Enemy] dt invalid:", dt);
+      return;
+    }
+
+    // Throttled update log (max 1x / 1s)
+    if (this._dbg.enabled) {
+      const now = performance.now();
+      if (now - this._dbg.lastUpdateLogAt > 1000) {
+        console.log(`[Enemy#${this._dbg.id}] UPDATE`, {
+          x: Number(this.x.toFixed(1)),
+          y: Number(this.y.toFixed(1)),
+          dt: Number(dt.toFixed(2)),
+          speed: this.speed,
+          dir: this.direction,
+        });
+        this._dbg.lastUpdateLogAt = now;
+      }
+    }
+
+    // Dead state
     if (!this.alive) {
       this.deathTimer += dt;
 
@@ -229,10 +237,10 @@ class EnemyBase {
       return;
     }
 
-    // movement
+    // Movement
     this.x += this.speed * this.direction * dt;
 
-    // patrol flip
+    // Patrol flip
     if (this.patrolMinX !== null && this.x < this.patrolMinX)
       this.direction = 1;
     if (this.patrolMaxX !== null && this.x > this.patrolMaxX)
@@ -246,7 +254,7 @@ class EnemyBase {
       this._dbg.lastDirection = this.direction;
     }
 
-    // throttled move log (max 1x / 1.5s)
+    // Throttled move log (max 1x / 1.5s)
     if (this._dbg.enabled) {
       const now = performance.now();
       if (now - this._dbg.lastMoveLogAt > 1500) {
@@ -258,6 +266,7 @@ class EnemyBase {
       }
     }
 
+    // Animation
     this.walkAnim.update(dt);
   }
 
@@ -267,21 +276,25 @@ class EnemyBase {
 
     ctx.save();
 
-    // dead
+    // Dead
     if (!this.alive && this.deadImg) {
-      ctx.drawImage(this.deadImg, screenX, drawY, this.w, this.h);
+      if (this.deadImg.complete) {
+        ctx.drawImage(this.deadImg, screenX, drawY, this.w, this.h);
+      }
       ctx.restore();
       return;
     }
 
     const img = this.walkAnim.image;
 
-    // optional: if image not loaded yet, avoid spamming
-    if (!img) {
+    // If not loaded yet, skip silently
+    if (!img || !img.complete) {
       if (this._dbg.enabled) {
         const now = performance.now();
         if (now - this._dbg.lastDrawSkipAt > 2000) {
-          console.warn(`[Enemy#${this._dbg.id}] DRAW SKIP (no image yet)`);
+          console.warn(
+            `[Enemy#${this._dbg.id}] DRAW SKIP (image not loaded yet)`,
+          );
           this._dbg.lastDrawSkipAt = now;
         }
       }
@@ -289,7 +302,7 @@ class EnemyBase {
       return;
     }
 
-    // flip when going right
+    // Flip when going right
     if (this.direction === 1) {
       ctx.translate(screenX + this.w, 0);
       ctx.scale(-1, 1);
@@ -302,17 +315,11 @@ class EnemyBase {
   }
 
   getBounds() {
-    return {
-      x: this.x,
-      y: this.y - this.h,
-      w: this.w,
-      h: this.h,
-    };
+    return { x: this.x, y: this.y - this.h, w: this.w, h: this.h };
   }
 
   kill() {
     if (!this.alive) return;
-
     this.alive = false;
     this.deathTimer = 0;
 
@@ -337,7 +344,6 @@ class ChickenNormal extends EnemyBase {
     patrolMaxX = null,
   } = {}) {
     const base = "/images/3_enemies_chicken/chicken_normal";
-
     const walkPaths = makeFramePaths(`${base}/1_walk`, [
       "1_w.png",
       "2_w.png",
@@ -359,10 +365,6 @@ class ChickenNormal extends EnemyBase {
       deadImageSrc: `${base}/2_dead/dead.png`,
       deathLifetime: 120,
     });
-
-    if (this._dbg?.enabled) {
-      console.log(`[Enemy#${this._dbg.id}] TYPE`, "ChickenNormal");
-    }
   }
 }
 
@@ -375,7 +377,6 @@ class ChickenSmall extends EnemyBase {
     patrolMaxX = null,
   } = {}) {
     const base = "/images/3_enemies_chicken/chicken_small";
-
     const walkPaths = makeFramePaths(`${base}/1_walk`, [
       "1_w.png",
       "2_w.png",
@@ -397,16 +398,8 @@ class ChickenSmall extends EnemyBase {
       deadImageSrc: `${base}/2_dead/dead.png`,
       deathLifetime: 120,
     });
-
-    if (this._dbg?.enabled) {
-      console.log(`[Enemy#${this._dbg.id}] TYPE`, "ChickenSmall");
-    }
   }
 }
-
-/* ----------------------------------------------------------------------------
-  BossChicken
----------------------------------------------------------------------------- */
 
 class BossChicken extends EnemyBase {
   constructor({
@@ -417,7 +410,6 @@ class BossChicken extends EnemyBase {
     patrolMaxX = null,
   } = {}) {
     const base = "/images/4_enemie_boss_chicken";
-
     const walkPaths = makeFramePaths(`${base}/1_walk`, [
       "G1.png",
       "G2.png",
@@ -441,67 +433,14 @@ class BossChicken extends EnemyBase {
       deathLifetime: 240,
     });
 
-    // Boss stats (optional)
     this.maxHp = 5;
     this.hp = 5;
-
-    // Sequences available (not used yet, but paths are correct)
-    this._bossSequences = {
-      alert: makeFramePaths(`${base}/2_alert`, [
-        "G5.png",
-        "G6.png",
-        "G7.png",
-        "G8.png",
-        "G9.png",
-        "G10.png",
-        "G11.png",
-        "G12.png",
-      ]),
-      attack: makeFramePaths(`${base}/3_attack`, [
-        "G13.png",
-        "G14.png",
-        "G15.png",
-        "G16.png",
-        "G17.png",
-        "G18.png",
-        "G19.png",
-        "G20.png",
-      ]),
-      hurt: makeFramePaths(`${base}/4_hurt`, ["G21.png", "G22.png", "G23.png"]),
-      deadFrames: makeFramePaths(`${base}/5_dead`, [
-        "G24.png",
-        "G25.png",
-        "G26.png",
-      ]),
-    };
-
-    if (this._dbg?.enabled) {
-      console.log(`[Boss#${this._dbg.id}] TYPE`, "BossChicken", {
-        hp: this.hp,
-        maxHp: this.maxHp,
-      });
-    }
   }
 
   takeHit(damage = 1) {
     if (!this.alive) return;
-
     this.hp -= damage;
-
-    if (this._dbg?.enabled) {
-      console.log(`[Boss#${this._dbg.id}] HIT`, {
-        damage,
-        hpLeft: this.hp,
-      });
-    }
-
-    if (this.hp <= 0) {
-      this.kill();
-
-      if (this._dbg?.enabled) {
-        console.log(`[Boss#${this._dbg.id}] DEAD`);
-      }
-    }
+    if (this.hp <= 0) this.kill();
   }
 }
 
