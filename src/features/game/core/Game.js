@@ -151,21 +151,14 @@ export default class Game {
 
     const state = this.gameWorld?.state;
 
-    // ✅ Level progression
     if (state === "won") {
+      // not final level: go to next level, but let UI handle start
       if (this.levelIndex < LEVELS.length - 1) {
         this.loadLevel(this.levelIndex + 1);
-
-        // Decide how you want to start next level:
-        // Option A: auto-start next level immediately:
-        // this.gameWorld.state = "playing";
-
-        // Option B (recommended): keep intro screen:
-        // this.gameWorld.state stays "intro"
-      } else {
-        // final win (after level4)
-        this.onWin?.();
       }
+
+      // always notify UI -> show win screen
+      this.onWin?.();
       return;
     }
 
