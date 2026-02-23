@@ -154,6 +154,7 @@ class EnemyBase {
     this.direction = direction;
 
     this.damage = damage;
+    console.log("[EnemyBase] damage =", this.damage);
 
     this.patrolMinX = patrolMinX;
     this.patrolMaxX = patrolMaxX;
