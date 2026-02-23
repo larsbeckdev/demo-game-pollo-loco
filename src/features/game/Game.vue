@@ -86,6 +86,9 @@ function createGame() {
 
   game = new Game(c);
 
+  // HUD sync interval (simple + stable)
+  game.__hudInterval = setInterval(syncHud, 100);
+
   // ✅ NEU: callbacks (Game muss die aufrufen)
   game.onWin = () => {
     screen.value = "win";
