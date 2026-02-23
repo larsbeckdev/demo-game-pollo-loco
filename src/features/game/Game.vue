@@ -267,15 +267,38 @@ function toggleFullscreen() {
   - Stops game, clears HUD interval, navigates home
 ============================================================================ */
 
-function exitToHome() {
+async function exitToHome() {
   closeSettings();
 
-  if (game?.__hudInterval) clearInterval(game.__hudInterval);
-  stopGame();
+  // 1) Stop loop
+  try {
+    game?.stop?.();
+  } catch (e) {
+    // ignore
+  }
 
+  // 2) Clear HUD interval
+  if (game?.__hudInterval) {
+    clearInterval(game.__hudInterval);
+    game.__hudInterval = null;
+  }
+
+  // 3) Optional: clear game ref (helps GC + prevents accidental calls)
+  game = null;
+
+  // 4) Reset UI state
   screen.value = "intro";
 
-  // Try named route first, fallback to "/"
+  // 5) Exit fullscreen if active (optional, but feels right)
+  if (document.fullscreenElement) {
+    try {
+      await document.exitFullscreen();
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // 6) Navigate home (named route first, fallback to "/")
   router.push({ name: "home" }).catch(() => {
     router.push("/").catch(() => {});
   });
