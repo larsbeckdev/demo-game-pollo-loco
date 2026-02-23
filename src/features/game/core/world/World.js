@@ -7,7 +7,6 @@ import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
 
 import Coin from "@/features/game/entities/collectables/Coin.js";
-import SalsaBottlePickup from "@/features/game/entities/collectables/SalsaBottlePickup.js";
 import StatsStore from "@/features/game/core/stats/StatsStore.js";
 import SoundManager from "@/features/game/core/audio/SoundManager.js";
 
