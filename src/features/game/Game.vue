@@ -46,16 +46,36 @@
       <div class="screen-stage">
         <img class="screen-image" :src="screenImage" alt="" />
 
-        <!-- Button-Layer über dem Bild -->
         <div class="screen-actions" @click.stop>
-          <n-button
-            class="start-button"
-            secondary
-            type="secondary"
-            size="large"
-            @click="onOverlayClick">
-            {{ screen === "intro" ? "Start" : "Nochmal" }}
-          </n-button>
+          <!-- Intro: Start -->
+          <template v-if="screen === 'intro'">
+            <n-button
+              class="start-button"
+              secondary
+              type="secondary"
+              size="large"
+              @click="startGame">
+              Start
+            </n-button>
+          </template>
+
+          <!-- Win / Lose: Restart + Exit -->
+          <template v-else>
+            <n-space vertical :size="12" align="center">
+              <n-button
+                class="start-button"
+                secondary
+                type="secondary"
+                size="large"
+                @click="restartGame">
+                Nochmal
+              </n-button>
+
+              <n-button size="large" type="default" @click="exitToHome">
+                Verlassen
+              </n-button>
+            </n-space>
+          </template>
         </div>
       </div>
     </div>
