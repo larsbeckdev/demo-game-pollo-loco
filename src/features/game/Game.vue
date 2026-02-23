@@ -6,6 +6,12 @@
 
     <!-- UI overlay -->
     <div class="ui">
+      <!-- ✅ HUD (Statusbars) nur im Spiel -->
+      <GameHud
+        v-if="screen === 'playing'"
+        :stats="hudStats"
+        :showBoss="hudStats.boss < 100"
+        color="orange" />
       <!-- Fullscreen button -->
       <n-button
         size="small"
@@ -45,6 +51,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import Game from "@/features/game/core/Game.js";
 import { Fullscreen } from "lucide-vue-next";
+import GameHud from "@/features/game/ui/hud/GameHud.vue";
 
 // DOM references
 const wrap = ref(null);
