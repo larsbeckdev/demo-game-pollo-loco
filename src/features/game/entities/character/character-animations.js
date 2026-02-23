@@ -1,8 +1,3 @@
-/* ============================================================================
-  Character Animations
-  - Builds animation instances for the player character
-============================================================================ */
-
 import FrameAnimation from "@/features/game/utils/animation/frame-animation.js";
 import {
   makeFramePaths,
@@ -10,7 +5,39 @@ import {
 } from "@/features/game/utils/animation/frame-paths.js";
 
 export function createCharacterAnimations() {
+  const DEBUG = true; // <- hier ausschalten wenn fertig
+  const DEEP = false;
+
   const basePath = "/images/2_character_pepe";
+
+  if (DEBUG) {
+    console.log(
+      "%c[CharacterAnimations] INIT",
+      "color:cyan;font-weight:bold;",
+      { basePath },
+    );
+  }
+
+  const build = (key, paths, fps, options = {}) => {
+    if (DEBUG) {
+      console.log(`[Anim Build] ${key}`, {
+        frames: paths.length,
+        fps,
+        loop: options?.loop ?? true,
+        sample: paths[0],
+      });
+
+      if (!paths.length) {
+        console.warn(`[Anim Warning] ${key} has 0 frames`);
+      }
+
+      if (DEEP) {
+        console.log(`[Anim Paths] ${key}`, paths);
+      }
+    }
+
+    return new FrameAnimation(paths, fps, options);
+  };
 
   const idlePaths = makeFramePaths(
     `${basePath}/1_idle/idle`,
@@ -28,6 +55,7 @@ export function createCharacterAnimations() {
   );
 
   // ===== JUMP PHASES =====
+
   const jumpStartPaths = makeFramePaths(
     `${basePath}/3_jump`,
     rangeFrames("J-", 31, 33),
@@ -57,19 +85,28 @@ export function createCharacterAnimations() {
     rangeFrames("D-", 51, 57),
   );
 
-  return {
-    idle: new FrameAnimation(idlePaths, 10),
-    long_idle: new FrameAnimation(longIdlePaths, 8),
-    walk: new FrameAnimation(walkPaths, 14),
+  const animations = {
+    idle: build("idle", idlePaths, 10),
+    long_idle: build("long_idle", longIdlePaths, 8),
+    walk: build("walk", walkPaths, 14),
 
-    // Jump states
-    jump_start: new FrameAnimation(jumpStartPaths, 14, { loop: false }),
-    jump_up: new FrameAnimation(jumpUpPaths, 1, { loop: false }),
-    jump_apex: new FrameAnimation(jumpApexPaths, 8, { loop: true }),
-    jump_fall: new FrameAnimation(jumpFallPaths, 1, { loop: false }),
-    jump_land: new FrameAnimation(jumpLandPaths, 14, { loop: false }),
+    jump_start: build("jump_start", jumpStartPaths, 14, { loop: false }),
+    jump_up: build("jump_up", jumpUpPaths, 1, { loop: false }),
+    jump_apex: build("jump_apex", jumpApexPaths, 8, { loop: true }),
+    jump_fall: build("jump_fall", jumpFallPaths, 1, { loop: false }),
+    jump_land: build("jump_land", jumpLandPaths, 14, { loop: false }),
 
-    hurt: new FrameAnimation(hurtPaths, 12),
-    dead: new FrameAnimation(deadPaths, 10, { loop: false }),
+    hurt: build("hurt", hurtPaths, 12),
+    dead: build("dead", deadPaths, 10, { loop: false }),
   };
+
+  if (DEBUG) {
+    console.log(
+      "%c[CharacterAnimations] READY",
+      "color:lime;font-weight:bold;",
+      Object.keys(animations),
+    );
+  }
+
+  return animations;
 }
