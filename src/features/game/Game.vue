@@ -79,6 +79,36 @@
         </div>
       </div>
     </div>
+
+    <n-modal
+      v-model:show="showSettings"
+      preset="card"
+      title="Einstellungen"
+      :style="{ width: '420px' }">
+      <n-space vertical :size="14">
+        <div>
+          <div style="font-weight: 600; margin-bottom: 6px">Level</div>
+          <n-select
+            v-model:value="selectedLevel"
+            :options="levelOptions"
+            :disabled="screen === 'playing'" />
+          <div style="opacity: 0.75; font-size: 12px; margin-top: 6px">
+            (Levelwechsel ist deaktiviert während du spielst – erst im
+            Intro/Endscreen.)
+          </div>
+        </div>
+
+        <n-space justify="end" :size="8">
+          <n-button @click="closeSettings">Schließen</n-button>
+
+          <n-button type="warning" secondary @click="restartGame">
+            Restart
+          </n-button>
+
+          <n-button type="error" @click="exitToHome"> Verlassen </n-button>
+        </n-space>
+      </n-space>
+    </n-modal>
   </div>
 </template>
 
