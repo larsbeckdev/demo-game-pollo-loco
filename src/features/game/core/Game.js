@@ -4,6 +4,8 @@ import Keyboard from "@/features/game/core/input/Keyboard.js";
 import World from "@/features/game/core/world/World.js";
 import { level1, level2, level3, level4 } from "@/features/game/levels";
 
+const LEVELS = [level1, level2, level3, level4];
+
 export default class Game {
   constructor(canvasElement) {
     this.canvasElement = canvasElement;
@@ -16,11 +18,15 @@ export default class Game {
     this.cameraSystem = new Camera();
     this.keyboardInput = new Keyboard();
 
+    // ✅ Level state
+    this.levelIndex = 0;
+
+    // ✅ Create first world
     this.gameWorld = new World({
       canvas: this.canvasElement,
       camera: this.cameraSystem,
       keyboard: this.keyboardInput,
-      level: level2,
+      level: LEVELS[this.levelIndex],
     });
 
     this.lastFrameTimestampMilliseconds = 0;
@@ -28,29 +34,53 @@ export default class Game {
     // =====================================================
     // DEBUG CONFIG
     // =====================================================
-
     this.debug = {
-      enabled: true, // Master switch
-      deep: false, // Very detailed logs
+      enabled: true,
+      deep: false,
       frameCount: 0,
-      fpsTimer: 0,
-      lastSecondTime: 0,
     };
 
     if (this.debug.enabled) {
       console.log("%c[Game] INIT", "color:cyan;font-weight:bold;", {
-        // canvasWidth: this.canvasElement.width,
-        // canvasHeight: this.canvasElement.height,
         contextReady: !!this.canvasContext2D,
         worldReady: !!this.gameWorld,
+        levelId: this.gameWorld?.level?.id,
       });
+    }
+  }
+
+  // =====================================================
+  // LEVEL LOADING
+  // =====================================================
+  loadLevel(index) {
+    this.levelIndex = Math.max(0, Math.min(index, LEVELS.length - 1));
+
+    // reset camera
+    this.cameraSystem.x = 0;
+
+    // create new world instance
+    this.gameWorld = new World({
+      canvas: this.canvasElement,
+      camera: this.cameraSystem,
+      keyboard: this.keyboardInput,
+      level: LEVELS[this.levelIndex],
+    });
+
+    if (this.debug.enabled) {
+      console.log(
+        "%c[Game] LOAD LEVEL",
+        "color:deepskyblue;font-weight:bold;",
+        {
+          levelIndex: this.levelIndex,
+          levelId: this.gameWorld?.level?.id,
+        },
+      );
     }
   }
 
   // =====================================================
   // START
   // =====================================================
-
   start() {
     if (this.isGameRunning) return;
 
@@ -70,7 +100,6 @@ export default class Game {
 
       this.lastFrameTimestampMilliseconds = currentTimestampMilliseconds;
 
-      // Frame spike detection
       if (this.debug.enabled && deltaTimeInFrames > 3) {
         console.warn("[Game] Frame spike detected!", {
           dt: deltaTimeInFrames.toFixed(2),
@@ -89,7 +118,6 @@ export default class Game {
   // =====================================================
   // STOP
   // =====================================================
-
   stop() {
     if (!this.isGameRunning) return;
 
@@ -108,20 +136,38 @@ export default class Game {
   // =====================================================
   // UPDATE
   // =====================================================
-
   update(deltaTimeInFrames) {
     this.gameWorld.update(deltaTimeInFrames);
 
     const state = this.gameWorld?.state;
-    if (state === "won") this.onWin?.();
-    if (state === "lost") this.onLose?.();
+
+    // ✅ Level progression
+    if (state === "won") {
+      if (this.levelIndex < LEVELS.length - 1) {
+        this.loadLevel(this.levelIndex + 1);
+
+        // Decide how you want to start next level:
+        // Option A: auto-start next level immediately:
+        // this.gameWorld.state = "playing";
+
+        // Option B (recommended): keep intro screen:
+        // this.gameWorld.state stays "intro"
+      } else {
+        // final win (after level4)
+        this.onWin?.();
+      }
+      return;
+    }
+
+    if (state === "lost") {
+      this.onLose?.();
+      return;
+    }
 
     if (!this.debug.enabled) return;
 
     this.debug.frameCount++;
-    this.debug.fpsTimer += deltaTimeInFrames;
 
-    // Log once per ~60 frames (~1 second)
     if (this.debug.frameCount % 60 === 0) {
       const player = this.gameWorld.character;
 
@@ -131,6 +177,7 @@ export default class Game {
         playerX: Number(player?.x?.toFixed?.(1) ?? 0),
         playerY: Number(player?.y?.toFixed?.(1) ?? 0),
         state: player?.state,
+        levelId: this.gameWorld?.level?.id,
       });
     }
 
@@ -147,7 +194,6 @@ export default class Game {
   // =====================================================
   // RENDER
   // =====================================================
-
   render() {
     const ctx = this.canvasContext2D;
     const canvas = this.canvasElement;
