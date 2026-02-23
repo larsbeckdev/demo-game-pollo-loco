@@ -1,5 +1,9 @@
 import Character from "@/features/game/entities/character/Character.js";
-import Enemy from "@/features/game/entities/enemy/Enemy.js";
+import {
+  ChickenNormal,
+  ChickenSmall,
+  BossChicken,
+} from "@/features/game/entities/enemy/Enemies.js";
 import { level1 } from "@/features/game/levels/level1.js";
 
 import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
@@ -52,7 +56,17 @@ export default class World {
     // Entities
     // -----------------------------------------------------
 
-    this.enemies = [new Enemy({ x: 600, groundY: this.groundY, scale: 0.5 })];
+    this.enemies = [
+      new ChickenNormal({
+        x: 600,
+        groundY: this.groundY,
+        scale: 0.5,
+        patrolMinX: 200,
+        patrolMaxX: 1200,
+      }),
+      new ChickenSmall({ x: 900, groundY: this.groundY, scale: 0.5 }),
+      new BossChicken({ x: 1800, groundY: this.groundY, scale: 1.0 }),
+    ];
 
     // coins
     this.coins = [
