@@ -94,8 +94,12 @@ export default class CollisionSystem {
         }
 
         if (typeof player.takeDamage === "function") {
-          const damage = enemy.damage ?? 10; // fallback falls nicht gesetzt
+
+          // Damage value from enemy config, fallback to 10 if not set
+          const damage = enemy.damage ?? 10; 
           player.takeDamage(damage);
+
+          // Update health UI
           const hpPercent = Math.round((player.hp / player.maxHp) * 100);
           world.stats?.setHealth?.(hpPercent);
         }
