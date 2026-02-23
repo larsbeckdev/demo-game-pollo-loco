@@ -126,28 +126,58 @@ export default class World {
   // =====================================================
 
   update(dt) {
+    // -----------------------------------------------------
+    // 1) Systems
+    // -----------------------------------------------------
     this.movementSystem.update(dt);
     this.throwSystem.update(dt);
     this.collisionSystem.update(dt);
     this.enemySpawnSystem.update(dt);
     this.coinSpawnSystem.update(dt);
 
-    if (!this._dbg.enabled) return;
+    // -----------------------------------------------------
+    // 2) Entity updates (WICHTIG für Bewegung/Animation)
+    // -----------------------------------------------------
 
-    this._dbg.frameCounter++;
+    // Player update (falls dein MovementSystem nicht schon alles macht)
+    this.character?.update?.(dt);
 
-    // Lose condition
+    // Enemies update (Bewegung + Walk-Animation)
+    for (const enemy of this.enemies) {
+      enemy.update?.(dt);
+    }
+
+    // Bottles update (nur falls du KEIN BottleUpdateSystem aktiv hast)
+    for (const bottle of this.bottles) {
+      bottle.update?.(dt);
+    }
+
+    // -----------------------------------------------------
+    // 3) Cleanup (optional aber gut)
+    // -----------------------------------------------------
+    this.enemies = this.enemies.filter((e) => !e.markedForRemoval);
+    this.bottles = this.bottles.filter((b) => b.alive !== false);
+
+    // -----------------------------------------------------
+    // 4) Game state (win/lose) – das muss IMMER laufen
+    // -----------------------------------------------------
+
     if (this.character?.dead) {
       this.state = "lost";
     }
 
-    // Win condition (wenn Boss existiert und tot)
     const boss = this.enemies?.find((e) => e instanceof BossChicken);
     if (boss && !boss.alive) {
       this.state = "won";
     }
 
-    // Log every ~60 frames
+    // -----------------------------------------------------
+    // 5) Debug logs (nur logs abhängig von debug)
+    // -----------------------------------------------------
+    if (!this._dbg.enabled) return;
+
+    this._dbg.frameCounter++;
+
     if (this._dbg.frameCounter % 60 === 0) {
       console.log(`[World#${this._dbg.id}] UPDATE`, {
         dt: Number(dt.toFixed(2)),
