@@ -25,12 +25,31 @@ class FrameAnimation {
     this.holdLast = holdLast;
 
     this.frame = 0;
-    this.acc = 0; // dt-units (bei dir: dt ~ 1 bei 60fps)
+    this.acc = 0;
+
+    this._dbg = {
+      enabled: true,
+      id: Math.random().toString(16).slice(2, 6),
+    };
+
+    if (this._dbg.enabled) {
+      console.log(`[FrameAnim#${this._dbg.id}] INIT`, {
+        frames: paths.length,
+        fps,
+        loop,
+        holdLast,
+        sample: paths[0],
+      });
+    }
   }
 
   reset() {
     this.frame = 0;
     this.acc = 0;
+
+    if (this._dbg.enabled) {
+      console.log(`[FrameAnim#${this._dbg.id}] RESET`);
+    }
   }
 
   update(dt) {
@@ -45,8 +64,14 @@ class FrameAnimation {
       const next = this.frame + 1;
 
       if (next >= this.images.length) {
-        if (this.loop) this.frame = 0;
-        else this.frame = this.holdLast ? this.images.length - 1 : 0;
+        if (this.loop) {
+          this.frame = 0;
+          if (this._dbg.enabled) {
+            console.log(`[FrameAnim#${this._dbg.id}] LOOP`);
+          }
+        } else {
+          this.frame = this.holdLast ? this.images.length - 1 : 0;
+        }
       } else {
         this.frame = next;
       }
