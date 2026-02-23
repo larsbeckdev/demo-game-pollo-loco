@@ -85,10 +85,10 @@ export default class CollisionSystem {
         continue;
       }
 
-      // --- SIDE DAMAGE ---
+      // --- DAMAGE ---
       if (this.damageCooldown <= 0) {
         if (this._dbg.enabled) {
-          console.log(`[Collision#${this._dbg.id}] SIDE DAMAGE`, {
+          console.log(`[Collision#${this._dbg.id}] DAMAGE`, {
             playerHP: player.hp,
           });
         }
