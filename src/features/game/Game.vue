@@ -131,6 +131,7 @@ onMounted(() => {
 // Cleanup lifecycle
 onBeforeUnmount(() => {
   game?.stop?.();
+  if (game?.__hudInterval) clearInterval(game.__hudInterval);
   console.log("[Game] beforeUnmount");
 });
 </script>
