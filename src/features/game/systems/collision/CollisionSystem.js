@@ -87,39 +87,33 @@ export default class CollisionSystem {
 
       // --- DAMAGE ---
       if (this.damageCooldown <= 0) {
-        const dmg = enemy.damage ?? 10;
-
-        console.log(`[Collision#${this._dbg.id}] DAMAGE`, {
-          enemy: enemy.constructor?.name,
-          enemyDamage: enemy.damage,
-          usedDamage: dmg,
-          playerHP_before: player.hp,
-        });
-
-        player.takeDamage(dmg);
-
-        console.log(`[Collision#${this._dbg.id}] DAMAGE_AFTER`, {
-          playerHP_after: player.hp,
-        });
-
-        if (this._dbg.enabled) {
-          console.log(`[Collision#${this._dbg.id}] DAMAGE`, {
-            playerHP: player.hp,
-          });
-        }
-
         if (typeof player.takeDamage === "function") {
-          // Damage value from enemy config, fallback to 10 if not set
           const damage = enemy.damage ?? 10;
+
+          if (this._dbg.enabled) {
+            console.log(`[Collision#${this._dbg.id}] DAMAGE`, {
+              enemy: enemy.constructor?.name,
+              enemyDamage: enemy.damage,
+              usedDamage: damage,
+              playerHP_before: player.hp,
+            });
+          }
+
           player.takeDamage(damage);
 
-          // Update health UI
           const hpPercent = Math.round((player.hp / player.maxHp) * 100);
           world.stats?.setHealth?.(hpPercent);
-        }
 
-        world.sound?.play?.("hurt");
-        this.damageCooldown = 45;
+          if (this._dbg.enabled) {
+            console.log(`[Collision#${this._dbg.id}] DAMAGE_AFTER`, {
+              playerHP_after: player.hp,
+              hpPercent,
+            });
+          }
+
+          world.sound?.play?.("hurt");
+          this.damageCooldown = 45;
+        }
       }
     }
   }
