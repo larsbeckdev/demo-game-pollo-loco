@@ -71,7 +71,7 @@ export default class Character {
     // DEBUG helpers (spam protection)
     // =========================
     this._dbg = {
-      enabled: true, // <- auf false, wenn du Ruhe willst
+      enabled: false, // <- auf false, wenn du Ruhe willst
       lastState: this.state,
       lastAnim: this.currentAnimationKey,
       lastFacing: this.facing,
