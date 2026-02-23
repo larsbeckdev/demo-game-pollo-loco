@@ -4,7 +4,7 @@ import {
   ChickenSmall,
   BossChicken,
 } from "@/features/game/entities/enemy/Enemies.js";
-import { level1, level2, level3, level4 } from "@/features/game/levels";
+import { level1 } from "@/features/game/levels";
 
 import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
@@ -12,7 +12,6 @@ import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.j
 import EnemySpawnSystem from "@/features/game/systems/spawn/EnemySpawnSystem.js";
 import CoinSpawnSystem from "@/features/game/systems/spawn/CoinSpawnSystem.js";
 
-import Coin from "@/features/game/entities/collectables/Coin.js";
 import StatsStore from "@/features/game/core/stats/StatsStore.js";
 import SoundManager from "@/features/game/core/audio/SoundManager.js";
 
@@ -41,29 +40,31 @@ export default class World {
     // -----------------------------------------------------
     // Ground
     // -----------------------------------------------------
-
     const groundOffset = this.level.groundOffset ?? 40;
     this.groundY = this.canvas.height - groundOffset;
 
     // -----------------------------------------------------
     // Player
     // -----------------------------------------------------
-
     this.character = new Character({ groundY: this.groundY });
 
     // -----------------------------------------------------
     // Stats + Sound
     // -----------------------------------------------------
-
     this.stats = new StatsStore({ health: 100 });
     this.sound = new SoundManager();
-
     this.sound.register("coin", "/audio/coin.mp3", { volume: 0.6 });
+
+    // -----------------------------------------------------
+    // World Size
+    // -----------------------------------------------------
+    const worldWidthFromLevel =
+      this.level.worldWidth !== undefined ? this.level.worldWidth : 4000;
+    this.worldWidth = worldWidthFromLevel;
 
     // -----------------------------------------------------
     // Entities
     // -----------------------------------------------------
-
     this.enemies = [
       new ChickenNormal({
         x: 600,
@@ -81,32 +82,21 @@ export default class World {
     // coins
     this.coins = [];
 
+    // bottles
     this.bottles = [];
-
-    this.enemySpawnSystem = new EnemySpawnSystem(this);
-    this.coinSpawnSystem = new CoinSpawnSystem(this);
-
-    // -----------------------------------------------------
-    // World Size
-    // -----------------------------------------------------
-
-    const worldWidthFromLevel =
-      this.level.worldWidth !== undefined ? this.level.worldWidth : 4000;
-
-    this.worldWidth = worldWidthFromLevel;
 
     // -----------------------------------------------------
     // Systems
     // -----------------------------------------------------
-
     this.movementSystem = new MovementSystem(this);
     this.throwSystem = new ThrowSystem(this);
     this.collisionSystem = new CollisionSystem(this);
+    this.enemySpawnSystem = new EnemySpawnSystem(this);
+    this.coinSpawnSystem = new CoinSpawnSystem(this);
 
     // -----------------------------------------------------
     // INIT LOG
     // -----------------------------------------------------
-
     if (this._dbg.enabled) {
       console.log(
         `%c[World#${this._dbg.id}] INIT`,
@@ -126,7 +116,6 @@ export default class World {
   // =====================================================
   // UPDATE
   // =====================================================
-
   update(dt) {
     // -----------------------------------------------------
     // 1) Systems
@@ -141,10 +130,10 @@ export default class World {
     // 2) Entity updates (WICHTIG für Bewegung/Animation)
     // -----------------------------------------------------
 
-    // Player update (falls dein MovementSystem nicht schon alles macht)
+    // Player update (wenn MovementSystem nicht alles übernimmt)
     this.character?.update?.(dt);
 
-    // Enemies update (Bewegung + Walk-Animation)
+    // Enemies update (Bewegung + Animation)
     for (const enemy of this.enemies) {
       enemy.update?.(dt);
     }
@@ -155,26 +144,54 @@ export default class World {
     }
 
     // -----------------------------------------------------
-    // 3) Cleanup (optional aber gut)
+    // 3) Boss spawn at end of level
+    // -----------------------------------------------------
+    if (!this.bossSpawned) {
+      const playerX = this.character?.x ?? 0;
+
+      // Spawn zone: last ~700px of world
+      const spawnZoneX = this.worldWidth - 700;
+
+      if (playerX >= spawnZoneX) {
+        this.enemies.push(
+          new BossChicken({
+            x: this.worldWidth - 350,
+            groundY: this.groundY,
+            scale: 1.0,
+            patrolMinX: this.worldWidth - 700,
+            patrolMaxX: this.worldWidth - 150,
+          }),
+        );
+
+        this.bossSpawned = true;
+
+        if (this._dbg.enabled) {
+          console.log(`[World#${this._dbg.id}] BOSS SPAWNED`);
+        }
+      }
+    }
+
+    // -----------------------------------------------------
+    // 4) Cleanup
     // -----------------------------------------------------
     this.enemies = this.enemies.filter((e) => !e.markedForRemoval);
     this.bottles = this.bottles.filter((b) => b.alive !== false);
 
     // -----------------------------------------------------
-    // 4) Game state (win/lose) – das muss IMMER laufen
+    // 5) Game state (win/lose) – muss IMMER laufen
     // -----------------------------------------------------
-
     if (this.character?.dead) {
       this.state = "lost";
     }
 
-    const boss = this.enemies?.find((e) => e instanceof BossChicken);
+    // Win condition (Boss existiert und ist tot)
+    const boss = this.enemies.find((e) => e instanceof BossChicken);
     if (boss && !boss.alive) {
       this.state = "won";
     }
 
     // -----------------------------------------------------
-    // 5) Debug logs (nur logs abhängig von debug)
+    // 6) Debug logs (nur wenn enabled)
     // -----------------------------------------------------
     if (!this._dbg.enabled) return;
 
@@ -188,6 +205,7 @@ export default class World {
         coinsLeft: this.coins.length,
         playerX: Number(this.character?.x?.toFixed?.(1) ?? 0),
         cameraX: Number(this.camera?.x?.toFixed?.(1) ?? 0),
+        bossSpawned: this.bossSpawned,
       });
     }
 
@@ -202,7 +220,6 @@ export default class World {
   // =====================================================
   // DRAW
   // =====================================================
-
   draw(ctx) {
     this.character.draw(ctx, this.camera.x);
 
@@ -214,12 +231,10 @@ export default class World {
       bottle.draw(ctx, this.camera.x);
     }
 
-    // ✅ collectables -> coins
     for (const coin of this.coins) {
       coin.draw(ctx, this.camera.x);
     }
 
-    // Throttled draw log
     if (this._dbg.enabled && this._dbg.frameCounter % 120 === 0) {
       console.log(`[World#${this._dbg.id}] DRAW OK`, {
         cameraX: Number(this.camera?.x?.toFixed?.(1) ?? 0),
