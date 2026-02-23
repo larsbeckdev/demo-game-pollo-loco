@@ -10,7 +10,7 @@ const routes = [
     children: [
       {
         path: "",
-        name: "game",
+        name: "home",
         component: Home,
       },
     ],
