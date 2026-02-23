@@ -170,7 +170,7 @@ class EnemyBase {
     // DEBUG (spam-safe)
     // =====================================================
     this._dbg = {
-      enabled: true, // <- ausschalten für Ruhe
+      enabled: false, // <- ausschalten für Ruhe
       id: Math.random().toString(16).slice(2, 6),
       lastDirection: this.direction,
       lastMoveLogAt: 0,
