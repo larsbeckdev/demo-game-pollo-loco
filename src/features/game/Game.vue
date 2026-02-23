@@ -175,6 +175,22 @@ function syncHud() {
 }
 
 /* ============================================================================
+  Settings Modal
+============================================================================ */
+
+const showSettings = ref(false);
+
+// Level selection (1-4)
+const selectedLevel = ref(2); // default: Level 2, falls du willst
+
+const levelOptions = [
+  { label: "Level 1", value: 1 },
+  { label: "Level 2", value: 2 },
+  { label: "Level 3", value: 3 },
+  { label: "Level 4", value: 4 },
+];
+
+/* ============================================================================
   Overlay Image Mapping
   - Passe die Pfade an deine echten Dateien an
 ============================================================================ */
