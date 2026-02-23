@@ -70,7 +70,8 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
 .hud-card {
   pointer-events: auto; /* enable interactions if you ever add buttons/tooltips */
   border-radius: 12px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* inner layout */
