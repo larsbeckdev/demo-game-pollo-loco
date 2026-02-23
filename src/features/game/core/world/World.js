@@ -6,7 +6,7 @@ import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
 
-import Coin from "@/features/game/entities/collectables/Coin.js";
+import Coin from "@/features/game/entities/coins/Coin.js";
 import StatsStore from "@/features/game/core/stats/StatsStore.js";
 import SoundManager from "@/features/game/core/audio/SoundManager.js";
 
@@ -55,10 +55,9 @@ export default class World {
 
     this.enemies = [new Enemy({ x: 600, groundY: this.groundY, scale: 0.5 })];
 
-    this.collectables = [
+    this.coins = [
       new Coin({ x: 420, y: this.groundY - 120 }),
       new Coin({ x: 480, y: this.groundY - 120 }),
-      // new SalsaBottlePickup({ x: 680, y: this.groundY - 70 }),
     ];
 
     this.bottles = [];
@@ -92,7 +91,7 @@ export default class World {
           groundY: this.groundY,
           worldWidth: this.worldWidth,
           enemies: this.enemies.length,
-          collectables: this.collectables.length,
+          coins: this.coins.length,
           bottles: this.bottles.length,
           level: this.level?.name ?? "unknown",
         },
@@ -119,7 +118,7 @@ export default class World {
         dt: Number(dt.toFixed(2)),
         enemiesAlive: this.enemies.filter((e) => e.alive).length,
         bottlesActive: this.bottles.filter((b) => b.alive).length,
-        collectablesLeft: this.collectables.length,
+        coinsLeft: this.coins.length,
         playerX: Number(this.character?.x?.toFixed?.(1) ?? 0),
         cameraX: Number(this.camera?.x?.toFixed?.(1) ?? 0),
       });
@@ -148,7 +147,7 @@ export default class World {
       bottle.draw(ctx, this.camera.x);
     }
 
-    for (const item of this.collectables) {
+    for (const item of this.coins) {
       item.draw(ctx, this.camera.x);
     }
 
@@ -157,10 +156,7 @@ export default class World {
       console.log(`[World#${this._dbg.id}] DRAW OK`, {
         cameraX: Number(this.camera?.x?.toFixed?.(1) ?? 0),
         entitiesDrawn:
-          1 +
-          this.enemies.length +
-          this.bottles.length +
-          this.collectables.length,
+          1 + this.enemies.length + this.bottles.length + this.coins.length,
       });
     }
   }
