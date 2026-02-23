@@ -125,6 +125,8 @@ class EnemyBase {
     speed = 1.2,
     direction = -1,
 
+    damage = 10,
+
     // Patrol
     patrolMinX = null,
     patrolMaxX = null,
