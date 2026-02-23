@@ -76,13 +76,13 @@ export default class World {
       new BossChicken({ x: 1800, groundY: this.groundY, scale: 1.0 }),
     ];
 
-    this.enemySpawnSystem = new EnemySpawnSystem(this);
-    this.coinSpawnSystem = new CoinSpawnSystem(this);
-
     // coins
     this.coins = [];
 
     this.bottles = [];
+
+    this.enemySpawnSystem = new EnemySpawnSystem(this);
+    this.coinSpawnSystem = new CoinSpawnSystem(this);
 
     // -----------------------------------------------------
     // World Size
