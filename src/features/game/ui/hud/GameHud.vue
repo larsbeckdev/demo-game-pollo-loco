@@ -2,7 +2,11 @@
   <div class="hud" aria-hidden="true">
     <!-- LEFT: one card for 3 bars -->
     <div class="hud-left">
-      <n-card class="hud-card" size="small" :bordered="false" p="small">
+      <n-card
+        class="hud-card"
+        size="small"
+        :bordered="false"
+        content-style="padding: 0;">
         <div class="hud-bars">
           <img class="bar" :src="healthSrc" alt="" />
           <img class="bar" :src="coinSrc" alt="" />
