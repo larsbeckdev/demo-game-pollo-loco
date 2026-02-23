@@ -25,21 +25,29 @@ class FrameAnimation {
     this.holdLast = holdLast;
 
     this.frame = 0;
-    this.acc = 0;
+    this.acc = 0; // dt-units (bei dir: dt ~ 1 bei 60fps)
 
+    // =====================================================
+    // DEBUG (spam-safe)
+    // =====================================================
     this._dbg = {
-      enabled: true,
+      enabled: true, // <- ausschalten für Ruhe
       id: Math.random().toString(16).slice(2, 6),
+      lastLoopLogAt: 0,
     };
 
     if (this._dbg.enabled) {
       console.log(`[FrameAnim#${this._dbg.id}] INIT`, {
         frames: paths.length,
-        fps,
-        loop,
-        holdLast,
+        fps: this.fps,
+        loop: this.loop,
+        holdLast: this.holdLast,
         sample: paths[0],
       });
+
+      if (!paths.length) {
+        console.warn(`[FrameAnim#${this._dbg.id}] WARNING: 0 frames`);
+      }
     }
   }
 
@@ -66,8 +74,14 @@ class FrameAnimation {
       if (next >= this.images.length) {
         if (this.loop) {
           this.frame = 0;
+
+          // loop log throttled (max 1x / 2s)
           if (this._dbg.enabled) {
-            console.log(`[FrameAnim#${this._dbg.id}] LOOP`);
+            const now = performance.now();
+            if (now - this._dbg.lastLoopLogAt > 2000) {
+              console.log(`[FrameAnim#${this._dbg.id}] LOOP`);
+              this._dbg.lastLoopLogAt = now;
+            }
           }
         } else {
           this.frame = this.holdLast ? this.images.length - 1 : 0;
@@ -152,39 +166,84 @@ class EnemyBase {
     this.deathTimer = 0;
     this.deathLifetime = deathLifetime;
 
-    // Debug
+    // =====================================================
+    // DEBUG (spam-safe)
+    // =====================================================
     this._dbg = {
-      enabled: true,
+      enabled: true, // <- ausschalten für Ruhe
       id: Math.random().toString(16).slice(2, 6),
       lastDirection: this.direction,
-      lastAlive: this.alive,
-      lastMoveLog: 0,
+      lastMoveLogAt: 0,
+      lastDrawSkipAt: 0,
+      lastRemovalLogAt: 0,
     };
 
     if (this._dbg.enabled) {
       console.log(`[Enemy#${this._dbg.id}] SPAWN`, {
         x: this.x,
         groundY: this.y,
+        w: this.w,
+        h: this.h,
         speed: this.speed,
+        direction: this.direction,
         patrolMinX: this.patrolMinX,
         patrolMaxX: this.patrolMaxX,
+        deathLifetime: this.deathLifetime,
+        deadImageSrc,
       });
     }
   }
 
   update(dt) {
+    // dead state
     if (!this.alive) {
       this.deathTimer += dt;
-      if (this.deathTimer >= this.deathLifetime) this.markedForRemoval = true;
+
+      if (this.deathTimer >= this.deathLifetime) {
+        this.markedForRemoval = true;
+
+        if (this._dbg.enabled) {
+          const now = performance.now();
+          if (now - this._dbg.lastRemovalLogAt > 1000) {
+            console.log(`[Enemy#${this._dbg.id}] MARKED FOR REMOVAL`, {
+              deathTimer: Number(this.deathTimer.toFixed(1)),
+              deathLifetime: this.deathLifetime,
+            });
+            this._dbg.lastRemovalLogAt = now;
+          }
+        }
+      }
       return;
     }
 
+    // movement
     this.x += this.speed * this.direction * dt;
 
+    // patrol flip
     if (this.patrolMinX !== null && this.x < this.patrolMinX)
       this.direction = 1;
     if (this.patrolMaxX !== null && this.x > this.patrolMaxX)
       this.direction = -1;
+
+    if (this._dbg.enabled && this.direction !== this._dbg.lastDirection) {
+      console.log(`[Enemy#${this._dbg.id}] DIRECTION FLIP`, {
+        newDirection: this.direction,
+        x: Number(this.x.toFixed(1)),
+      });
+      this._dbg.lastDirection = this.direction;
+    }
+
+    // throttled move log (max 1x / 1.5s)
+    if (this._dbg.enabled) {
+      const now = performance.now();
+      if (now - this._dbg.lastMoveLogAt > 1500) {
+        console.log(`[Enemy#${this._dbg.id}] MOVE`, {
+          x: Number(this.x.toFixed(1)),
+          dir: this.direction,
+        });
+        this._dbg.lastMoveLogAt = now;
+      }
+    }
 
     this.walkAnim.update(dt);
   }
@@ -203,6 +262,19 @@ class EnemyBase {
     }
 
     const img = this.walkAnim.image;
+
+    // optional: if image not loaded yet, avoid spamming
+    if (!img) {
+      if (this._dbg.enabled) {
+        const now = performance.now();
+        if (now - this._dbg.lastDrawSkipAt > 2000) {
+          console.warn(`[Enemy#${this._dbg.id}] DRAW SKIP (no image yet)`);
+          this._dbg.lastDrawSkipAt = now;
+        }
+      }
+      ctx.restore();
+      return;
+    }
 
     // flip when going right
     if (this.direction === 1) {
@@ -227,8 +299,15 @@ class EnemyBase {
 
   kill() {
     if (!this.alive) return;
+
     this.alive = false;
     this.deathTimer = 0;
+
+    if (this._dbg.enabled) {
+      console.log(`[Enemy#${this._dbg.id}] KILLED`, {
+        x: Number(this.x.toFixed(1)),
+      });
+    }
   }
 }
 
@@ -265,8 +344,12 @@ class ChickenNormal extends EnemyBase {
       walkPaths,
       walkFps: 8,
       deadImageSrc: `${base}/2_dead/dead.png`,
-      deathLifetime: 120, // optional
+      deathLifetime: 120,
     });
+
+    if (this._dbg?.enabled) {
+      console.log(`[Enemy#${this._dbg.id}] TYPE`, "ChickenNormal");
+    }
   }
 }
 
@@ -299,18 +382,17 @@ class ChickenSmall extends EnemyBase {
       walkPaths,
       walkFps: 10,
       deadImageSrc: `${base}/2_dead/dead.png`,
-      deathLifetime: 120, // optional
+      deathLifetime: 120,
     });
+
+    if (this._dbg?.enabled) {
+      console.log(`[Enemy#${this._dbg.id}] TYPE`, "ChickenSmall");
+    }
   }
 }
 
 /* ----------------------------------------------------------------------------
   BossChicken
-  - Assets based on your folder /images/4_enemie_boss_chicken
-  - For now we use:
-    - walk: 1_walk/G1..G4.png
-    - dead: 5_dead/G26.png (last frame)
-  - alert/attack/hurt are there, but not used until we add states
 ---------------------------------------------------------------------------- */
 
 class BossChicken extends EnemyBase {
@@ -343,7 +425,7 @@ class BossChicken extends EnemyBase {
       walkPaths,
       walkFps: 6,
       deadImageSrc: `${base}/5_dead/G26.png`,
-      deathLifetime: 240, // optional
+      deathLifetime: 240,
     });
 
     // Boss stats (optional)
@@ -379,6 +461,13 @@ class BossChicken extends EnemyBase {
         "G26.png",
       ]),
     };
+
+    if (this._dbg?.enabled) {
+      console.log(`[Boss#${this._dbg.id}] TYPE`, "BossChicken", {
+        hp: this.hp,
+        maxHp: this.maxHp,
+      });
+    }
   }
 
   takeHit(damage = 1) {
@@ -386,8 +475,19 @@ class BossChicken extends EnemyBase {
 
     this.hp -= damage;
 
+    if (this._dbg?.enabled) {
+      console.log(`[Boss#${this._dbg.id}] HIT`, {
+        damage,
+        hpLeft: this.hp,
+      });
+    }
+
     if (this.hp <= 0) {
       this.kill();
+
+      if (this._dbg?.enabled) {
+        console.log(`[Boss#${this._dbg.id}] DEAD`);
+      }
     }
   }
 }
