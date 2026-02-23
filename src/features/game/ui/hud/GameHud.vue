@@ -2,7 +2,7 @@
   <div class="hud" aria-hidden="true">
     <!-- LEFT: one card for 3 bars -->
     <div class="hud-left">
-      <n-card class="hud-card" size="small" :bordered="false">
+      <n-card class="hud-card" size="small" :bordered="false" p="small">
         <div class="hud-bars">
           <img class="bar" :src="healthSrc" alt="" />
           <img class="bar" :src="coinSrc" alt="" />
@@ -72,7 +72,6 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
   border-radius: 8px;
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.2);
-  padding: 4px;
 }
 
 /* inner layout */
