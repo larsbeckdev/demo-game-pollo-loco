@@ -54,7 +54,7 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
 }
 
 .bar {
-  width: 220px;
+  width: 150px;
   height: auto;
   image-rendering: auto;
 }
