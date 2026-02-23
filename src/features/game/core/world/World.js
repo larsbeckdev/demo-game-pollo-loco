@@ -58,8 +58,9 @@ export default class World {
     // -----------------------------------------------------
     // World Size
     // -----------------------------------------------------
-    this.worldWidth =
+    const worldWidthFromLevel =
       this.level.worldWidth !== undefined ? this.level.worldWidth : 4000;
+    this.worldWidth = worldWidthFromLevel;
 
     // -----------------------------------------------------
     // Entities
@@ -93,6 +94,9 @@ export default class World {
     this.enemySpawnSystem = new EnemySpawnSystem(this);
     this.coinSpawnSystem = new CoinSpawnSystem(this);
 
+    // -----------------------------------------------------
+    // INIT LOG
+    // -----------------------------------------------------
     if (this._dbg.enabled) {
       console.log(
         `%c[World#${this._dbg.id}] INIT`,
@@ -103,8 +107,7 @@ export default class World {
           enemies: this.enemies.length,
           coins: this.coins.length,
           bottles: this.bottles.length,
-          levelId: this.level?.id ?? "unknown",
-          bossCfg: this.level?.boss ?? null,
+          level: this.level?.name ?? "unknown",
         },
       );
     }
@@ -114,13 +117,6 @@ export default class World {
   // UPDATE
   // =====================================================
   update(dt) {
-    // ✅ Freeze world when not playing
-    // This prevents post-win/post-lose damage, spawns, and weird state flips.
-    if (this.state !== "playing") {
-      if (this._dbg.enabled) this._dbg.frameCounter++;
-      return;
-    }
-
     // -----------------------------------------------------
     // 1) Systems
     // -----------------------------------------------------
@@ -131,56 +127,53 @@ export default class World {
     this.coinSpawnSystem.update(dt);
 
     // -----------------------------------------------------
-    // 2) Entity updates (movement + animations)
+    // 2) Entity updates (WICHTIG für Bewegung/Animation)
     // -----------------------------------------------------
+
+    // Player update (wenn MovementSystem nicht alles übernimmt)
     this.character?.update?.(dt);
 
+    // Enemies update (Bewegung + Animation)
     for (const enemy of this.enemies) {
       enemy.update?.(dt);
     }
 
+    // Bottles update (nur falls du KEIN BottleUpdateSystem aktiv hast)
     for (const bottle of this.bottles) {
       bottle.update?.(dt);
     }
 
+    // ✅ Freeze world when not playing (prevents post-win damage / spawns)
+    if (this.state !== "playing") {
+      // Optional: still tick debug counter
+      if (this._dbg.enabled) this._dbg.frameCounter++;
+      return;
+    }
+
     // -----------------------------------------------------
-    // 3) Boss spawn (from level config)
+    // 3) Boss spawn at end of level
     // -----------------------------------------------------
     if (!this.bossSpawned) {
       const playerX = this.character?.x ?? 0;
 
-      const bossCfg = this.level?.boss ?? null;
-
-      // Defaults if a level has no boss config
-      const bossX = bossCfg?.x ?? this.worldWidth - 350;
-      const bossScale = bossCfg?.scale ?? 1.0;
-      const bossHp = bossCfg?.hp ?? 5;
-
-      // Spawn zone: a bit before boss position
-      const spawnZoneX = bossX - 600;
+      // Spawn zone: last ~700px of world
+      const spawnZoneX = this.worldWidth - 700;
 
       if (playerX >= spawnZoneX) {
-        const boss = new BossChicken({
-          x: bossX,
-          groundY: this.groundY,
-          scale: bossScale,
-          patrolMinX: bossX - 450,
-          patrolMaxX: bossX + 200,
-        });
+        this.enemies.push(
+          new BossChicken({
+            x: this.worldWidth - 350,
+            groundY: this.groundY,
+            scale: 1.0,
+            patrolMinX: this.worldWidth - 700,
+            patrolMaxX: this.worldWidth - 150,
+          }),
+        );
 
-        // ✅ Apply level HP to boss
-        boss.maxHp = bossHp;
-        boss.hp = bossHp;
-
-        this.enemies.push(boss);
         this.bossSpawned = true;
 
         if (this._dbg.enabled) {
-          console.log(`[World#${this._dbg.id}] BOSS SPAWNED`, {
-            bossX,
-            bossScale,
-            bossHp,
-          });
+          console.log(`[World#${this._dbg.id}] BOSS SPAWNED`);
         }
       }
     }
@@ -192,19 +185,20 @@ export default class World {
     this.bottles = this.bottles.filter((b) => b.alive !== false);
 
     // -----------------------------------------------------
-    // 5) Game state (win/lose)
+    // 5) Game state (win/lose) – muss IMMER laufen
     // -----------------------------------------------------
     if (this.character?.dead) {
       this.state = "lost";
     }
 
+    // Win condition (Boss existiert und ist tot)
     const boss = this.enemies.find((e) => e instanceof BossChicken);
     if (boss && !boss.alive) {
       this.state = "won";
     }
 
     // -----------------------------------------------------
-    // 6) Debug logs
+    // 6) Debug logs (nur wenn enabled)
     // -----------------------------------------------------
     if (!this._dbg.enabled) return;
 
@@ -219,7 +213,13 @@ export default class World {
         playerX: Number(this.character?.x?.toFixed?.(1) ?? 0),
         cameraX: Number(this.camera?.x?.toFixed?.(1) ?? 0),
         bossSpawned: this.bossSpawned,
-        levelId: this.level?.id ?? "unknown",
+      });
+    }
+
+    if (this._dbg.deep) {
+      console.log(`[World#${this._dbg.id}] DEEP UPDATE`, {
+        playerState: this.character?.state,
+        playerVy: this.character?.vy,
       });
     }
   }
