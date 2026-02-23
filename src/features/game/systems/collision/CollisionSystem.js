@@ -94,9 +94,8 @@ export default class CollisionSystem {
         }
 
         if (typeof player.takeDamage === "function") {
-
           // Damage value from enemy config, fallback to 10 if not set
-          const damage = enemy.damage ?? 10; 
+          const damage = enemy.damage ?? 10;
           player.takeDamage(damage);
 
           // Update health UI
