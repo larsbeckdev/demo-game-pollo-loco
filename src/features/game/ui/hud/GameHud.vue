@@ -76,13 +76,14 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
   border-radius: 8px;
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.2);
+  padding: 6px;
 }
 
 /* inner layout */
 .hud-bars {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* gap: 10px; */
 }
 
 /* optional: make boss card a bit tighter visually */
