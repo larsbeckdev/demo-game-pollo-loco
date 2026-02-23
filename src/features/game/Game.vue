@@ -111,6 +111,7 @@ function startGame() {
 }
 
 function restartGame() {
+  if (game?.__hudInterval) clearInterval(game.__hudInterval);
   game?.stop?.();
   createGame();
   startGame();
