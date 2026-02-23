@@ -61,6 +61,19 @@ class FrameAnimation {
   }
 
   update(dt) {
+    if (!Number.isFinite(dt)) {
+      console.warn("[Enemy] dt invalid:", dt);
+      return;
+    }
+
+    // TEMP: 1x pro Sekunde loggen
+    if (!this._lastDbg) this._lastDbg = 0;
+    const now = performance.now();
+    if (now - this._lastDbg > 1000) {
+      console.log("[Enemy] update ok", { x: this.x, dt });
+      this._lastDbg = now;
+    }
+
     if (this.images.length <= 1) return;
 
     const frameTime = 60 / this.fps;
