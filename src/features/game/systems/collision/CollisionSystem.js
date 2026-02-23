@@ -144,34 +144,25 @@ export default class CollisionSystem {
     const player = world.character;
     if (!player) return;
 
-    // Keep compatibility: your World still uses "coins"
     const coins = world.coins ?? [];
-
     const playerBounds = player.getBounds();
 
     for (const coin of coins) {
       if (coin.collected) continue;
-
-      // coin.bounds must be {x,y,w,h}
       if (this._aabb(playerBounds, coin.bounds)) {
         if (this._dbg.enabled) {
           console.log(`[Collision#${this._dbg.id}] COIN COLLECT`, {
-            type: coin.type ?? "coin",
-            x: coin.bounds?.x,
-            y: coin.bounds?.y,
+            x: coin.x,
+            y: coin.y,
           });
         }
-
         coin.onCollect?.(world);
       }
     }
 
     const before = coins.length;
-
-    // write back to world.collectables for compatibility
-    world.collectables = coins.filter((c) => !c.collected);
-
-    const after = world.collectables.length;
+    world.coins = coins.filter((c) => !c.collected);
+    const after = world.coins.length;
 
     if (this._dbg.enabled && before !== after) {
       console.log(`[Collision#${this._dbg.id}] Coin cleanup`, {
