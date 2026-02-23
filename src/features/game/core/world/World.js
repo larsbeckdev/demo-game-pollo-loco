@@ -4,7 +4,7 @@ import {
   ChickenSmall,
   BossChicken,
 } from "@/features/game/entities/enemy/Enemies.js";
-import { level1 } from "@/features/game/levels/level1.js";
+import { level1, level2, level3, level4 } from "@/features/game/levels";
 
 import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
