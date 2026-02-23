@@ -52,62 +52,133 @@ export default class Character {
     this.currentAnimationKey = "idle";
 
     // =========================
-    // NEU: Jump phase helpers
+    // Jump phase helpers
     // =========================
     this.jumpStartActive = false;
     this.jumpStartTimer = 0;
-    this.jumpStartDuration = 12; // ~0.2s @ 60fps (tweak)
+    this.jumpStartDuration = 12;
 
     this.landActive = false;
     this.landTimer = 0;
-    this.landDuration = 10; // ~0.16s @ 60fps (tweak)
+    this.landDuration = 10;
 
     // =========================
-    // NEU: Ground transition tracking
+    // Ground transition tracking
     // =========================
     this._wasOnGround = true;
 
-    console.log("[Character] groundY:", groundY);
+    // =========================
+    // DEBUG helpers (spam protection)
+    // =========================
+    this._dbg = {
+      enabled: true, // <- auf false, wenn du Ruhe willst
+      lastState: this.state,
+      lastAnim: this.currentAnimationKey,
+      lastFacing: this.facing,
+      lastMove: "none", // "left" | "right" | "none"
+      lastOnGround: this.onGround,
+      lastDrawLogAt: 0,
+      wasJumpDown: false,
+    };
+
+    if (this._dbg.enabled) {
+      console.log("[Character] init", {
+        x: this.x,
+        y: this.y,
+        groundY: this.groundY,
+        w: this.w,
+        h: this.h,
+        speed: this.speed,
+        jumpForce: this.jumpForce,
+        gravity: this.gravity,
+        animKeys: Object.keys(this.animations ?? {}),
+      });
+    }
   }
 
   handleInput(keyboard) {
     if (this.dead || this.hurtActive) return;
 
+    const dbg = this._dbg;
+
     this.vx = 0;
 
-    if (keyboard?.LEFT) {
+    const left = !!keyboard?.LEFT;
+    const right = !!keyboard?.RIGHT;
+    const jumpDown = !!keyboard?.JUMP;
+
+    // --- movement intent (log only on change) ---
+    let move = "none";
+    if (left) move = "left";
+    else if (right) move = "right";
+
+    if (dbg.enabled && move !== dbg.lastMove) {
+      console.log("[Character] input move:", move);
+      dbg.lastMove = move;
+    }
+
+    if (left) {
       this.vx = -this.speed;
       this.facing = -1;
     }
 
-    if (keyboard?.RIGHT) {
+    if (right) {
       this.vx = this.speed;
       this.facing = 1;
     }
 
-    if (keyboard?.JUMP) {
+    // --- facing change (log only on change) ---
+    if (dbg.enabled && this.facing !== dbg.lastFacing) {
+      console.log("[Character] facing:", this.facing === 1 ? "right" : "left");
+      dbg.lastFacing = this.facing;
+    }
+
+    // --- jump edge detect (log once per press) ---
+    const justPressedJump = jumpDown && !dbg.wasJumpDown;
+    dbg.wasJumpDown = jumpDown;
+
+    if (justPressedJump) {
+      if (dbg.enabled) {
+        console.log("[Character] input jump pressed", {
+          onGround: this.onGround,
+          y: this.y,
+          vy: this.vy,
+        });
+      }
       this.jump();
     }
   }
 
   jump() {
-    if (!this.onGround) return;
+    if (!this.onGround) {
+      if (this._dbg.enabled) {
+        console.log("[Character] jump blocked (not on ground)", {
+          y: this.y,
+          vy: this.vy,
+        });
+      }
+      return;
+    }
 
     this.onGround = false;
     this.vy = -this.jumpForce;
 
-    // =========================
-    // NEU: Trigger jump start phase
-    // =========================
+    // Trigger jump start phase
     this.jumpStartActive = true;
     this.jumpStartTimer = this.jumpStartDuration;
-    this.landActive = false; // cancel landing if any
-    this.play("jump_start"); // ensure correct animation
+    this.landActive = false;
+
+    if (this._dbg.enabled) {
+      console.log("[Character] jump start", {
+        vy: this.vy,
+        jumpStartDuration: this.jumpStartDuration,
+      });
+    }
+
+    this.play("jump_start");
   }
 
-  // =========================
-  // NEU: Safe animation switch with validation
-  // =========================
+  // Safe animation switch with validation
   play(key) {
     if (this.currentAnimationKey === key) return;
 
@@ -122,11 +193,20 @@ export default class Character {
       return;
     }
 
+    if (this._dbg.enabled) {
+      console.log("[Character] animation ->", key);
+    }
+
     this.currentAnimationKey = key;
     next.reset?.();
   }
 
   update(deltaTimeInFrames = 1) {
+    const dbg = this._dbg;
+
+    // --- physics start snapshot (optional, not logged every frame) ---
+    // if (dbg.enabled) console.log("[Character] update dt:", deltaTimeInFrames);
+
     // Horizontal movement
     this.x += this.vx * deltaTimeInFrames;
 
@@ -143,9 +223,17 @@ export default class Character {
       this.onGround = false;
     }
 
-    // =========================
-    // NEU: Detect "just landed"
-    // =========================
+    // --- onGround change logging ---
+    if (dbg.enabled && this.onGround !== dbg.lastOnGround) {
+      console.log("[Character] onGround ->", this.onGround, {
+        y: this.y,
+        groundY: this.groundY,
+        vy: this.vy,
+      });
+      dbg.lastOnGround = this.onGround;
+    }
+
+    // Detect "just landed"
     const wasOnGround = this._wasOnGround;
     this._wasOnGround = this.onGround;
 
@@ -156,12 +244,17 @@ export default class Character {
       // End airborne "start" phase on landing
       this.jumpStartActive = false;
       this.jumpStartTimer = 0;
+
+      if (dbg.enabled) {
+        console.log("[Character] landed", {
+          landDuration: this.landDuration,
+          x: this.x,
+          y: this.y,
+        });
+      }
     }
 
-    // =========================
-    // NEU: Priority-based animation resolution
-    // (we keep this.state for debugging if you like)
-    // =========================
+    // Priority-based animation resolution
     let animKey = "idle";
 
     if (this.dead) {
@@ -175,9 +268,12 @@ export default class Character {
       if (this.hurtTimer <= 0) {
         this.hurtActive = false;
         this.hurtTimer = 0;
+
+        if (dbg.enabled) {
+          console.log("[Character] hurt ended");
+        }
       }
     } else {
-      // Landing phase has priority when grounded
       if (this.landActive) {
         this.state = "jump_land";
         animKey = "jump_land";
@@ -186,11 +282,14 @@ export default class Character {
         if (this.landTimer <= 0) {
           this.landActive = false;
           this.landTimer = 0;
+
+          if (dbg.enabled) {
+            console.log("[Character] landing phase ended");
+          }
         }
       } else if (!this.onGround) {
         this.idleTimer = 0;
 
-        // Jump start phase first (hocke/absprung)
         if (this.jumpStartActive) {
           this.state = "jump_start";
           animKey = "jump_start";
@@ -199,9 +298,12 @@ export default class Character {
           if (this.jumpStartTimer <= 0) {
             this.jumpStartActive = false;
             this.jumpStartTimer = 0;
+
+            if (dbg.enabled) {
+              console.log("[Character] jumpStart phase ended");
+            }
           }
         } else {
-          // Air phases derived from vertical speed
           if (this.vy < -0.2) {
             this.state = "jump_up";
             animKey = "jump_up";
@@ -225,9 +327,19 @@ export default class Character {
       }
     }
 
-    // =========================
-    // NEU: Apply animation safely
-    // =========================
+    // --- state change logging ---
+    if (dbg.enabled && this.state !== dbg.lastState) {
+      console.log("[Character] state ->", this.state, {
+        vx: this.vx,
+        vy: this.vy,
+        onGround: this.onGround,
+        x: this.x,
+        y: this.y,
+      });
+      dbg.lastState = this.state;
+    }
+
+    // Apply animation safely
     this.play(animKey);
 
     const anim = this.animations?.[this.currentAnimationKey];
@@ -240,12 +352,24 @@ export default class Character {
       if (this.invincibleTimer <= 0) {
         this.invincible = false;
         this.invincibleTimer = 0;
+
+        if (dbg.enabled) {
+          console.log("[Character] invincible ended");
+        }
       }
     }
   }
 
   takeDamage() {
-    if (this.dead || this.invincible) return;
+    if (this.dead || this.invincible) {
+      if (this._dbg.enabled) {
+        console.log("[Character] takeDamage blocked", {
+          dead: this.dead,
+          invincible: this.invincible,
+        });
+      }
+      return;
+    }
 
     this.hp--;
 
@@ -257,31 +381,56 @@ export default class Character {
 
     this.vx = 0;
 
+    if (this._dbg.enabled) {
+      console.log("[Character] took damage", {
+        hp: this.hp,
+        invincibleDuration: this.invincibleDuration,
+        hurtDuration: this.hurtDuration,
+      });
+    }
+
     if (this.hp <= 0) {
       this.dead = true;
       this.hurtActive = false;
       this.hurtTimer = 0;
       this.vx = 0;
       this.vy = 0;
+
+      if (this._dbg.enabled) {
+        console.log("[Character] DEAD", { x: this.x, y: this.y });
+      }
     }
   }
 
   draw(ctx, cameraX = 0) {
-    // =========================
-    // NEU: Safer access (avoid reading image before ready)
-    // =========================
+    const dbg = this._dbg;
+
     const animation = this.animations?.[this.currentAnimationKey];
-    if (!animation?.ready) return;
+    if (!animation?.ready) {
+      // optional: selten loggen, wenn Images nicht ready sind
+      // if (dbg.enabled) console.log("[Character] draw skipped (anim not ready)", this.currentAnimationKey);
+      return;
+    }
 
     const image = animation.image;
 
     const screenX = this.x - cameraX;
     const drawY = this.y - this.h;
 
-    // Hurt blink effect - only draw on even frames of the hurt timer
-    // if (this.hurtActive && !this.dead) {
-    //   if (Math.floor(this.hurtTimer / 3) % 2 === 0) return;
-    // }
+    // --- draw log (throttled, max ~1x pro sekunde) ---
+    if (dbg.enabled) {
+      const now = performance.now();
+      if (now - dbg.lastDrawLogAt > 1000) {
+        console.log("[Character] draw", {
+          anim: this.currentAnimationKey,
+          state: this.state,
+          screenX: Math.round(screenX),
+          drawY: Math.round(drawY),
+          cameraX: Math.round(cameraX),
+        });
+        dbg.lastDrawLogAt = now;
+      }
+    }
 
     ctx.save();
 
@@ -297,11 +446,17 @@ export default class Character {
   }
 
   getBounds() {
-    return {
+    const bounds = {
       x: this.x,
       y: this.y - this.h,
       w: this.w,
       h: this.h,
     };
+
+    if (this._dbg.enabled && !Number.isFinite(bounds.x + bounds.y)) {
+      console.warn("[Character] bounds invalid", bounds);
+    }
+
+    return bounds;
   }
 }

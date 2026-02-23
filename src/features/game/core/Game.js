@@ -1,67 +1,19 @@
-/* ============================================================================
-  Imports
-  - Rendering: Background renderer
-  - Rendering: Camera system (holds camera position)
-  - Input: Keyboard input handler
-  - World: Container that owns entities and runs systems
-============================================================================ */
-
 import Background from "@/features/game/rendering/Background.js";
 import Camera from "@/features/game/rendering/Camera.js";
 import Keyboard from "@/features/game/core/input/Keyboard.js";
 import World from "@/features/game/core/world/World.js";
 
-/* ============================================================================
-  Game
-  - Owns the main game loop (requestAnimationFrame)
-  - Calculates delta time between frames
-  - Calls update() and render() every frame while running
-  - Holds core instances (background, camera, input, world)
-============================================================================ */
-
 export default class Game {
-  /* ==========================================================================
-    Constructor
-    - Stores canvas references
-    - Creates core instances (background, camera, keyboard, world)
-    - Initializes loop state and timing values
-  ========================================================================== */
-
   constructor(canvasElement) {
-    /* ------------------------------------------------------------------------
-      Canvas references
-      - canvasElement: the DOM element <canvas>
-      - canvasContext2D: the 2D drawing context used for rendering
-    ------------------------------------------------------------------------ */
-
     this.canvasElement = canvasElement;
     this.canvasContext2D = canvasElement.getContext("2d");
-
-    /* ------------------------------------------------------------------------
-      Game loop state
-      - isGameRunning: determines if the loop should continue
-      - requestAnimationFrameId: stores the handle so we can cancel it on stop()
-    ------------------------------------------------------------------------ */
 
     this.isGameRunning = false;
     this.requestAnimationFrameId = null;
 
-    /* ------------------------------------------------------------------------
-      Core systems and helpers
-      - backgroundRenderer: draws the background based on camera position
-      - cameraSystem: stores the camera position (for scrolling)
-      - keyboardInput: reads keyboard state
-    ------------------------------------------------------------------------ */
-
     this.backgroundRenderer = new Background();
     this.cameraSystem = new Camera();
     this.keyboardInput = new Keyboard();
-
-    /* ------------------------------------------------------------------------
-      World setup
-      - The world owns entities (character, enemies, bottles, etc.)
-      - The world owns and runs systems (movement, collision, throw, etc.)
-    ------------------------------------------------------------------------ */
 
     this.gameWorld = new World({
       canvas: this.canvasElement,
@@ -69,179 +21,152 @@ export default class Game {
       keyboard: this.keyboardInput,
     });
 
-    /* ------------------------------------------------------------------------
-      Timing
-      - lastFrameTimestampMilliseconds: used to compute delta time each frame
-      - The value is in milliseconds as provided by requestAnimationFrame
-    ------------------------------------------------------------------------ */
-
     this.lastFrameTimestampMilliseconds = 0;
 
-    /* ------------------------------------------------------------------------
-      Debug values (optional)
-      - debugAutoScroll: when true, camera moves automatically to the right
-      - debugLogTimerInFrames: timer accumulator for log throttling
-    ------------------------------------------------------------------------ */
+    // =====================================================
+    // DEBUG CONFIG
+    // =====================================================
 
-    this.debugAutoScroll = false;
-    this.debugLogTimerInFrames = 0;
+    this.debug = {
+      enabled: true, // Master switch
+      deep: false, // Very detailed logs
+      frameCount: 0,
+      fpsTimer: 0,
+      lastSecondTime: 0,
+    };
 
-    this.debugEnabled = true;
-    this.debugFrames = 0;
+    if (this.debug.enabled) {
+      console.log("%c[Game] INIT", "color:cyan;font-weight:bold;", {
+        canvasWidth: this.canvasElement.width,
+        canvasHeight: this.canvasElement.height,
+        contextReady: !!this.canvasContext2D,
+        worldReady: !!this.gameWorld,
+      });
+    }
   }
 
-  /* ==========================================================================
-    Start
-    - Enables the loop
-    - Creates a requestAnimationFrame callback function
-    - Schedules the first frame
-  ========================================================================== */
+  // =====================================================
+  // START
+  // =====================================================
 
   start() {
-    /* ------------------------------------------------------------------------
-      Enable loop
-    ------------------------------------------------------------------------ */
+    if (this.isGameRunning) return;
 
     this.isGameRunning = true;
 
-    /* ------------------------------------------------------------------------
-      Game loop function (called every animation frame)
-      - currentTimestampMilliseconds is provided by requestAnimationFrame
-    ------------------------------------------------------------------------ */
+    if (this.debug.enabled) {
+      console.log("%c[Game] START", "color:lime;font-weight:bold;");
+    }
 
     const gameLoop = (currentTimestampMilliseconds) => {
-      /* ----------------------------------------------------------------------
-        Stop condition
-        - If stop() was called, do not continue updating or rendering
-      ---------------------------------------------------------------------- */
-
       if (!this.isGameRunning) return;
-
-      /* ----------------------------------------------------------------------
-        Delta time calculation
-        - Convert milliseconds to a "frame unit" relative to ~60 frames per second
-        - 16.67 ms is approximately one frame at 60 frames per second
-        - If this is the first frame, default delta time to 1 frame unit
-      ---------------------------------------------------------------------- */
 
       const deltaTimeInFrames = this.lastFrameTimestampMilliseconds
         ? (currentTimestampMilliseconds - this.lastFrameTimestampMilliseconds) /
           16.67
         : 1;
 
-      /* ----------------------------------------------------------------------
-        Store timestamp for next frame delta time calculation
-      ---------------------------------------------------------------------- */
-
       this.lastFrameTimestampMilliseconds = currentTimestampMilliseconds;
 
-      /* ----------------------------------------------------------------------
-        Update and render
-      ---------------------------------------------------------------------- */
+      // Frame spike detection
+      if (this.debug.enabled && deltaTimeInFrames > 3) {
+        console.warn("[Game] Frame spike detected!", {
+          dt: deltaTimeInFrames.toFixed(2),
+        });
+      }
 
       this.update(deltaTimeInFrames);
       this.render();
 
-      /* ----------------------------------------------------------------------
-        Schedule next frame
-      ---------------------------------------------------------------------- */
-
       this.requestAnimationFrameId = requestAnimationFrame(gameLoop);
     };
-
-    /* ------------------------------------------------------------------------
-      Start first frame
-    ------------------------------------------------------------------------ */
 
     this.requestAnimationFrameId = requestAnimationFrame(gameLoop);
   }
 
-  /* ==========================================================================
-    Stop
-    - Disables the loop
-    - Cancels the scheduled animation frame if present
-  ========================================================================== */
+  // =====================================================
+  // STOP
+  // =====================================================
 
   stop() {
-    /* ------------------------------------------------------------------------
-      Disable loop
-    ------------------------------------------------------------------------ */
+    if (!this.isGameRunning) return;
 
     this.isGameRunning = false;
-
-    /* ------------------------------------------------------------------------
-      Cancel scheduled frame
-    ------------------------------------------------------------------------ */
 
     if (this.requestAnimationFrameId) {
       cancelAnimationFrame(this.requestAnimationFrameId);
       this.requestAnimationFrameId = null;
     }
-  }
 
-  /* ==========================================================================
-    Update
-    - Updates world logic each frame
-    - Contains an optional debug section that can be toggled
-  ========================================================================== */
-
-  update(deltaTimeInFrames) {
-    /* ------------------------------------------------------------------------
-      World update
-      - Runs world systems in their defined order
-    ------------------------------------------------------------------------ */
-
-    this.gameWorld.update(deltaTimeInFrames);
-
-    if (this.debugEnabled) {
-      this.debugFrames += 1;
-      if (this.debugFrames % 60 === 0) {
-        console.log("[Game]", {
-          dt: Number(deltaTimeInFrames.toFixed(2)),
-          camX: Number(this.cameraSystem.x.toFixed(1)),
-          playerX: Number(this.gameWorld.character?.x?.toFixed?.(1) ?? 0),
-        });
-      }
+    if (this.debug.enabled) {
+      console.log("%c[Game] STOP", "color:red;font-weight:bold;");
     }
   }
 
-  /* ==========================================================================
-    Render
-    - Clears the canvas each frame
-    - Draws background first, then world entities
-  ========================================================================== */
+  // =====================================================
+  // UPDATE
+  // =====================================================
+
+  update(deltaTimeInFrames) {
+    this.gameWorld.update(deltaTimeInFrames);
+
+    if (!this.debug.enabled) return;
+
+    this.debug.frameCount++;
+    this.debug.fpsTimer += deltaTimeInFrames;
+
+    // Log once per ~60 frames (~1 second)
+    if (this.debug.frameCount % 60 === 0) {
+      const player = this.gameWorld.character;
+
+      console.log("%c[Game Update]", "color:orange;", {
+        dt: Number(deltaTimeInFrames.toFixed(2)),
+        camX: Number(this.cameraSystem.x.toFixed(1)),
+        playerX: Number(player?.x?.toFixed?.(1) ?? 0),
+        playerY: Number(player?.y?.toFixed?.(1) ?? 0),
+        state: player?.state,
+      });
+    }
+
+    if (this.debug.deep) {
+      console.log("[Game Deep Debug]", {
+        deltaTimeInFrames,
+        cameraX: this.cameraSystem.x,
+        playerVX: this.gameWorld.character?.vx,
+        playerVY: this.gameWorld.character?.vy,
+      });
+    }
+  }
+
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   render() {
-    /* ------------------------------------------------------------------------a
-      Local references for readability
-    ------------------------------------------------------------------------ */
+    const ctx = this.canvasContext2D;
+    const canvas = this.canvasElement;
 
-    const canvasContext2D = this.canvasContext2D;
-    const canvasElement = this.canvasElement;
+    if (!ctx) {
+      console.error("[Game] No 2D context!");
+      return;
+    }
 
-    /* ------------------------------------------------------------------------
-      Clear frame
-    ------------------------------------------------------------------------ */
-
-    canvasContext2D.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-    /* ------------------------------------------------------------------------
-      Background draw
-      - Uses cameraSystem.x to shift the background for scrolling
-    ------------------------------------------------------------------------ */
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     this.backgroundRenderer.draw(
-      canvasContext2D,
-      canvasElement.width,
-      canvasElement.height,
+      ctx,
+      canvas.width,
+      canvas.height,
       this.cameraSystem.x,
     );
 
-    /* ------------------------------------------------------------------------
-      World draw
-      - Draw all entities (player, enemies, bottles, etc.)
-    ------------------------------------------------------------------------ */
+    this.gameWorld.draw(ctx);
 
-    this.gameWorld.draw(canvasContext2D);
+    if (this.debug.enabled && this.debug.frameCount % 120 === 0) {
+      console.log("%c[Game Render OK]", "color:purple;", {
+        cameraX: this.cameraSystem.x,
+        canvasWidth: canvas.width,
+      });
+    }
   }
 }
