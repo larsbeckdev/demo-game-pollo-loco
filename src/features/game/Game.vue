@@ -14,17 +14,31 @@
 
     <!-- UI overlay (Buttons oben rechts) -->
     <div class="ui">
-      <!-- Fullscreen button -->
-      <n-button
-        size="small"
-        type="primary"
-        secondary
-        circle
-        @click="toggleFullscreen">
-        <n-icon>
-          <Fullscreen />
-        </n-icon>
-      </n-button>
+      <n-space :size="8">
+        <!-- Settings button -->
+        <n-button
+          size="small"
+          type="primary"
+          secondary
+          circle
+          @click="openSettings">
+          <n-icon>
+            <Settings />
+          </n-icon>
+        </n-button>
+
+        <!-- Fullscreen button -->
+        <n-button
+          size="small"
+          type="primary"
+          secondary
+          circle
+          @click="toggleFullscreen">
+          <n-icon>
+            <Fullscreen />
+          </n-icon>
+        </n-button>
+      </n-space>
     </div>
 
     <!-- ✅ Intro/Outro Overlay -->
