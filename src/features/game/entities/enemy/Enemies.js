@@ -151,6 +151,25 @@ class EnemyBase {
 
     this.deathTimer = 0;
     this.deathLifetime = deathLifetime;
+
+    // Debug
+    this._dbg = {
+      enabled: true,
+      id: Math.random().toString(16).slice(2, 6),
+      lastDirection: this.direction,
+      lastAlive: this.alive,
+      lastMoveLog: 0,
+    };
+
+    if (this._dbg.enabled) {
+      console.log(`[Enemy#${this._dbg.id}] SPAWN`, {
+        x: this.x,
+        groundY: this.y,
+        speed: this.speed,
+        patrolMinX: this.patrolMinX,
+        patrolMaxX: this.patrolMaxX,
+      });
+    }
   }
 
   update(dt) {
