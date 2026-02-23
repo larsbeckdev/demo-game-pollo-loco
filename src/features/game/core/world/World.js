@@ -36,7 +36,8 @@ export default class World {
     // Ground
     // -----------------------------------------------------
 
-    this.groundY = 398;
+    const groundOffset = this.level.groundOffset ?? 40;
+    this.groundY = this.canvas.height - groundOffset;
 
     // -----------------------------------------------------
     // Player
