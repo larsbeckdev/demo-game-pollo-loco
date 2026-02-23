@@ -112,6 +112,10 @@ export default class Game {
   update(deltaTimeInFrames) {
     this.gameWorld.update(deltaTimeInFrames);
 
+    const state = this.gameWorld?.state;
+    if (state === "won") this.onWin?.();
+    if (state === "lost") this.onLose?.();
+
     if (!this.debug.enabled) return;
 
     this.debug.frameCount++;
