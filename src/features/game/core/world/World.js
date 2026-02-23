@@ -114,6 +114,9 @@ export default class World {
   // UPDATE
   // =====================================================
   update(dt) {
+    if (this._dbg?.enabled) {
+      console.log("[World] state =", this.state);
+    }
     // ✅ Freeze world when not playing
     // This prevents post-win/post-lose damage, spawns, and weird state flips.
     if (this.state !== "playing") {
