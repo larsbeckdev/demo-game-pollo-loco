@@ -48,16 +48,13 @@ export default class World {
 
     this.sound.register("coin", "/audio/coin.mp3", { volume: 0.6 });
 
-    // ✅ optional: nur drin lassen, wenn du wirklich irgendwo bottle-sounds nutzt
-    // this.sound.register("bottle", "/audio/bottle.mp3", { volume: 0.6 });
-
     // -----------------------------------------------------
     // Entities
     // -----------------------------------------------------
 
     this.enemies = [new Enemy({ x: 600, groundY: this.groundY, scale: 0.5 })];
 
-    // ✅ collectables -> coins
+    // coins
     this.coins = [
       new Coin({ x: 420, y: this.groundY - 120 }),
       new Coin({ x: 480, y: this.groundY - 120 }),
