@@ -10,6 +10,7 @@ import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
 import EnemySpawnSystem from "@/features/game/systems/spawn/EnemySpawnSystem.js";
+import CoinSpawnSystem from "@/features/game/systems/spawn/CoinSpawnSystem.js";
 
 import Coin from "@/features/game/entities/collectables/Coin.js";
 import StatsStore from "@/features/game/core/stats/StatsStore.js";
