@@ -186,6 +186,10 @@ function createGame() {
 
 function startGame() {
   screen.value = "playing";
+
+  // ✅ allow world to run
+  if (game?.gameWorld) game.gameWorld.state = "playing";
+
   game?.start?.();
   debugLog("[UI] startGame()");
 }
