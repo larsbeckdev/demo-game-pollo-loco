@@ -121,6 +121,7 @@ export default class World {
     this.movementSystem.update(dt);
     this.throwSystem.update(dt);
     this.collisionSystem.update(dt);
+    this.enemySpawnSystem.update(dt);
 
     if (!this._dbg.enabled) return;
 
