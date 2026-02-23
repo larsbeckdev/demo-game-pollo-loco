@@ -80,11 +80,12 @@
       </div>
     </div>
 
-    <!-- ✅ Settings Modal -->
+    <!-- ✅ Settings Modal (Fullscreen-safe via :to="wrap") -->
     <n-modal
       v-model:show="showSettings"
       preset="card"
       title="Einstellungen"
+      :to="wrap"
       :style="{ width: '420px' }">
       <n-space vertical :size="14">
         <div>
@@ -141,11 +142,8 @@ import GameHud from "@/features/game/ui/hud/GameHud.vue";
 
 /* ============================================================================
   DEBUG (Abgabe: auf false lassen)
-  - Wenn DEBUG true ist, bekommst du Logs (nicht checklist-konform).
 ============================================================================ */
-
 const DEBUG = false;
-
 function debugLog(...args) {
   if (!DEBUG) return;
   console.log(...args);
@@ -156,23 +154,18 @@ const router = useRouter();
 /* ============================================================================
   DOM refs
 ============================================================================ */
-
 const wrap = ref(null);
 const canvas = ref(null);
 let game = null;
 
 /* ============================================================================
   Screen State
-  - intro | playing | win | lose
 ============================================================================ */
-
 const screen = ref("intro");
 
 /* ============================================================================
-  HUD Stats (Statusbars)
-  - Werte werden aus world.stats synchronisiert
+  HUD Stats
 ============================================================================ */
-
 const hudStats = ref({
   health: 100,
   coins: 0,
@@ -195,7 +188,6 @@ function syncHud() {
 /* ============================================================================
   Settings Modal
 ============================================================================ */
-
 const showSettings = ref(false);
 
 // Level selection (1-4)
@@ -238,7 +230,6 @@ function applySelectedLevel() {
 /* ============================================================================
   Overlay Image Mapping
 ============================================================================ */
-
 const screenImage = computed(() => {
   if (screen.value === "intro")
     return "/images/9_intro_outro_screens/start/startscreen_1.png";
@@ -253,7 +244,6 @@ const screenImage = computed(() => {
 /* ============================================================================
   Fullscreen
 ============================================================================ */
-
 function toggleFullscreen() {
   const el = wrap.value;
   if (!el) return;
@@ -266,7 +256,6 @@ function toggleFullscreen() {
   Exit to Home
   - Stops game, clears HUD interval, navigates home
 ============================================================================ */
-
 async function exitToHome() {
   closeSettings();
 
@@ -283,13 +272,13 @@ async function exitToHome() {
     game.__hudInterval = null;
   }
 
-  // 3) Optional: clear game ref (helps GC + prevents accidental calls)
+  // 3) Drop ref
   game = null;
 
   // 4) Reset UI state
   screen.value = "intro";
 
-  // 5) Exit fullscreen if active (optional, but feels right)
+  // 5) Exit fullscreen
   if (document.fullscreenElement) {
     try {
       await document.exitFullscreen();
@@ -298,7 +287,7 @@ async function exitToHome() {
     }
   }
 
-  // 6) Navigate home (named route first, fallback to "/")
+  // 6) Navigate home
   router.push({ name: "home" }).catch(() => {
     router.push("/").catch(() => {});
   });
@@ -309,29 +298,26 @@ async function exitToHome() {
 /* ============================================================================
   Game Setup
 ============================================================================ */
-
 function createGame() {
   const c = canvas.value;
   if (!c) return;
 
-  // Fixed internal resolution (CSS skaliert responsiv)
+  // Fixed internal resolution (CSS scales responsively)
   c.width = 800;
   c.height = 450;
 
   game = new Game(c);
 
   // Keep selected level in sync if Game supports it
-  // If your Game constructor currently starts at level1 by default,
-  // you can call loadLevel here.
   if (typeof game?.loadLevel === "function") {
     const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
     game.loadLevel(idx);
   }
 
-  // HUD sync interval (simple + stable)
+  // HUD sync interval
   game.__hudInterval = setInterval(syncHud, 100);
 
-  // Win/Lose Callbacks
+  // Win/Lose callbacks
   game.onWin = () => {
     screen.value = "win";
     game?.stop?.();
@@ -344,20 +330,17 @@ function createGame() {
     debugLog("[UI] LOSE -> screen=lose");
   };
 
-  // Initial HUD pull
   syncHud();
-
   debugLog("[UI] createGame()", { canvas: { w: c.width, h: c.height } });
 }
 
 /* ============================================================================
-  Start / Restart Flow (ohne Reload)
+  Start / Restart
 ============================================================================ */
-
 function startGame() {
   screen.value = "playing";
 
-  // ✅ allow world to run (important because World.update freezes otherwise)
+  // allow world to run (important if World.update freezes when not playing)
   if (game?.gameWorld) game.gameWorld.state = "playing";
 
   game?.start?.();
@@ -386,7 +369,6 @@ function restartGame() {
 /* ============================================================================
   Lifecycle
 ============================================================================ */
-
 onMounted(() => {
   createGame(); // init but DO NOT auto-start
   debugLog("[UI] mounted -> waiting on intro");
