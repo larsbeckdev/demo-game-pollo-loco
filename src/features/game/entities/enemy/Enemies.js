@@ -3,10 +3,9 @@
   ----------------------------------------------------------------------------
   Single-file enemy module:
   - FrameAnimation
-  - Helpers (makeFramePaths, rangeFrames)
+  - Helper (makeFramePaths)
   - EnemyBase
-  - Concrete enemy types: ChickenNormal, ChickenSmall, Boss
-  - Optional factory: createEnemy
+  - Enemy Types: ChickenNormal, ChickenSmall, BossChicken
 ============================================================================ */
 
 /* ============================================================================
@@ -43,16 +42,13 @@ class FrameAnimation {
     while (this.acc >= frameTime) {
       this.acc -= frameTime;
 
-      const nextFrame = this.frame + 1;
+      const next = this.frame + 1;
 
-      if (nextFrame >= this.images.length) {
-        if (this.loop) {
-          this.frame = 0;
-        } else {
-          this.frame = this.holdLast ? this.images.length - 1 : 0;
-        }
+      if (next >= this.images.length) {
+        if (this.loop) this.frame = 0;
+        else this.frame = this.holdLast ? this.images.length - 1 : 0;
       } else {
-        this.frame = nextFrame;
+        this.frame = next;
       }
     }
   }
@@ -68,14 +64,6 @@ class FrameAnimation {
 
 function makeFramePaths(base, names) {
   return names.map((name) => `${base}/${name}`);
-}
-
-function rangeFrames(prefix, from, to, suffix = ".png") {
-  const names = [];
-  for (let i = from; i <= to; i++) {
-    names.push(`${prefix}${i}${suffix}`);
-  }
-  return names;
 }
 
 /* ============================================================================
@@ -100,70 +88,60 @@ class EnemyBase {
     patrolMinX = null,
     patrolMaxX = null,
 
-    // Animations
+    // Animation
     walkPaths = [],
     walkFps = 8,
 
-    // Death
+    // Death (static image)
     deadImageSrc = null,
-    deathLifetime = 120, // dt-units (~2s)
-  } = {}) {
-    // Position (y is ground line)
-    this.x = x;
-    this.y = groundY;
 
-    // Size
+    // Optional removal after death (if you want cleanup)
+    deathLifetime = 999999, // dt-units
+  } = {}) {
+    this.x = x;
+    this.y = groundY; // ground line
+
     this.baseWidth = baseWidth;
     this.baseHeight = baseHeight;
 
     this.w = this.baseWidth * scale;
     this.h = this.baseHeight * scale;
 
-    // Movement
     this.speed = speed;
     this.direction = direction;
 
-    // Patrol
     this.patrolMinX = patrolMinX;
     this.patrolMaxX = patrolMaxX;
 
-    // State
     this.alive = true;
     this.markedForRemoval = false;
 
-    // Animations
     this.walkAnim = new FrameAnimation(walkPaths, walkFps, { loop: true });
 
-    // Dead image
     this.deadImg = null;
     if (deadImageSrc) {
       this.deadImg = new Image();
       this.deadImg.src = deadImageSrc;
     }
 
-    // Death timer
     this.deathTimer = 0;
     this.deathLifetime = deathLifetime;
   }
 
   update(dt) {
-    // Dead -> count down -> remove
     if (!this.alive) {
       this.deathTimer += dt;
       if (this.deathTimer >= this.deathLifetime) this.markedForRemoval = true;
       return;
     }
 
-    // Walk
     this.x += this.speed * this.direction * dt;
 
-    // Patrol flip
     if (this.patrolMinX !== null && this.x < this.patrolMinX)
       this.direction = 1;
     if (this.patrolMaxX !== null && this.x > this.patrolMaxX)
       this.direction = -1;
 
-    // Animate
     this.walkAnim.update(dt);
   }
 
@@ -173,17 +151,16 @@ class EnemyBase {
 
     ctx.save();
 
-    // Dead
+    // dead
     if (!this.alive && this.deadImg) {
       ctx.drawImage(this.deadImg, screenX, drawY, this.w, this.h);
       ctx.restore();
       return;
     }
 
-    // Walk frame
     const img = this.walkAnim.image;
 
-    // Flip when going right
+    // flip when going right
     if (this.direction === 1) {
       ctx.translate(screenX + this.w, 0);
       ctx.scale(-1, 1);
@@ -215,11 +192,6 @@ class EnemyBase {
   Enemy Types
 ============================================================================ */
 
-/* ----------------------------------------------------------------------------
-  ChickenNormal
-  - uses /images/3_enemies_chicken/chicken_normal
----------------------------------------------------------------------------- */
-
 class ChickenNormal extends EnemyBase {
   constructor({
     x = 0,
@@ -244,23 +216,15 @@ class ChickenNormal extends EnemyBase {
       baseHeight: 80,
       speed: 1.2,
       direction: -1,
-
       patrolMinX,
       patrolMaxX,
-
       walkPaths,
       walkFps: 8,
       deadImageSrc: `${base}/2_dead/dead.png`,
-      deathLifetime: 120,
+      deathLifetime: 120, // optional
     });
   }
 }
-
-/* ----------------------------------------------------------------------------
-  ChickenSmall
-  - placeholder: adjust paths + size to your asset folder
-  - If you don’t have assets yet, this still won’t crash if you don’t spawn it.
----------------------------------------------------------------------------- */
 
 class ChickenSmall extends EnemyBase {
   constructor({
@@ -270,7 +234,6 @@ class ChickenSmall extends EnemyBase {
     patrolMinX = null,
     patrolMaxX = null,
   } = {}) {
-    // NOTE: change path to your real folder when you add assets
     const base = "/images/3_enemies_chicken/chicken_small";
 
     const walkPaths = makeFramePaths(`${base}/1_walk`, [
@@ -287,24 +250,26 @@ class ChickenSmall extends EnemyBase {
       baseHeight: 80,
       speed: 1.6,
       direction: -1,
-
       patrolMinX,
       patrolMaxX,
-
       walkPaths,
       walkFps: 10,
       deadImageSrc: `${base}/2_dead/dead.png`,
-      deathLifetime: 120,
+      deathLifetime: 120, // optional
     });
   }
 }
 
 /* ----------------------------------------------------------------------------
-  Boss
-  - placeholder skeleton (you can extend with states later)
+  BossChicken
+  - Assets based on your folder /images/4_enemie_boss_chicken
+  - For now we use:
+    - walk: 1_walk/G1..G4.png
+    - dead: 5_dead/G26.png (last frame)
+  - alert/attack/hurt are there, but not used until we add states
 ---------------------------------------------------------------------------- */
 
-class Boss extends EnemyBase {
+class BossChicken extends EnemyBase {
   constructor({
     x = 0,
     groundY = 0,
@@ -312,60 +277,74 @@ class Boss extends EnemyBase {
     patrolMinX = null,
     patrolMaxX = null,
   } = {}) {
-    // NOTE: change path to your real boss folder when you add assets
-    const base = "/images/4_enemies_boss/boss";
+    const base = "/images/4_enemie_boss_chicken";
 
     const walkPaths = makeFramePaths(`${base}/1_walk`, [
-      "1.png",
-      "2.png",
-      "3.png",
-      "4.png",
+      "G1.png",
+      "G2.png",
+      "G3.png",
+      "G4.png",
     ]);
 
     super({
       x,
       groundY,
       scale,
-      baseWidth: 200,
-      baseHeight: 200,
+      baseWidth: 250,
+      baseHeight: 250,
       speed: 0.8,
       direction: -1,
-
       patrolMinX,
       patrolMaxX,
-
       walkPaths,
       walkFps: 6,
-      deadImageSrc: `${base}/2_dead/dead.png`,
-      deathLifetime: 180,
+      deadImageSrc: `${base}/5_dead/G26.png`,
+      deathLifetime: 240, // optional
     });
 
-    // Boss-specific
+    // Boss stats (optional)
     this.maxHp = 5;
     this.hp = 5;
+
+    // Sequences available (not used yet, but paths are correct)
+    this._bossSequences = {
+      alert: makeFramePaths(`${base}/2_alert`, [
+        "G5.png",
+        "G6.png",
+        "G7.png",
+        "G8.png",
+        "G9.png",
+        "G10.png",
+        "G11.png",
+        "G12.png",
+      ]),
+      attack: makeFramePaths(`${base}/3_attack`, [
+        "G13.png",
+        "G14.png",
+        "G15.png",
+        "G16.png",
+        "G17.png",
+        "G18.png",
+        "G19.png",
+        "G20.png",
+      ]),
+      hurt: makeFramePaths(`${base}/4_hurt`, ["G21.png", "G22.png", "G23.png"]),
+      deadFrames: makeFramePaths(`${base}/5_dead`, [
+        "G24.png",
+        "G25.png",
+        "G26.png",
+      ]),
+    };
   }
 
-  takeHit(dmg = 1) {
+  takeHit(damage = 1) {
     if (!this.alive) return;
-    this.hp -= dmg;
-    if (this.hp <= 0) this.kill();
-  }
-}
 
-/* ============================================================================
-  Optional Factory
-============================================================================ */
+    this.hp -= damage;
 
-function createEnemy(type, options) {
-  switch (type) {
-    case "chickenNormal":
-      return new ChickenNormal(options);
-    case "chickenSmall":
-      return new ChickenSmall(options);
-    case "boss":
-      return new Boss(options);
-    default:
-      return new ChickenNormal(options);
+    if (this.hp <= 0) {
+      this.kill();
+    }
   }
 }
 
@@ -373,19 +352,4 @@ function createEnemy(type, options) {
   Exports
 ============================================================================ */
 
-export {
-  // helpers
-  makeFramePaths,
-  rangeFrames,
-
-  // base
-  EnemyBase,
-
-  // types
-  ChickenNormal,
-  ChickenSmall,
-  Boss,
-
-  // factory
-  createEnemy,
-};
+export { EnemyBase, ChickenNormal, ChickenSmall, BossChicken, makeFramePaths };
