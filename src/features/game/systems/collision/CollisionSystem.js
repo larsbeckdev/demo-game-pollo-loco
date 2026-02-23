@@ -144,8 +144,8 @@ export default class CollisionSystem {
     const player = world.character;
     if (!player) return;
 
-    // Keep compatibility: your World still uses "collectables"
-    const coins = world.collectables ?? [];
+    // Keep compatibility: your World still uses "coins"
+    const coins = world.coins ?? [];
 
     const playerBounds = player.getBounds();
 
