@@ -73,8 +73,10 @@ export default class World {
         patrolMaxX: 1200,
       }),
       new ChickenSmall({ x: 900, groundY: this.groundY, scale: 0.5 }),
-      new BossChicken({ x: 1800, groundY: this.groundY, scale: 1.0 }),
     ];
+
+    // Boss state
+    this.bossSpawned = false;
 
     // coins
     this.coins = [];
