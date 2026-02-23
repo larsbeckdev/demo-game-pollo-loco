@@ -1,4 +1,4 @@
-import ChickenNormal from "@/features/game/entities/enemy/chicken/ChickenNormal.js";
+import { ChickenNormal } from "@/features/game/entities/enemy/Enemies.js";
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
