@@ -87,6 +87,21 @@ export default class CollisionSystem {
 
       // --- DAMAGE ---
       if (this.damageCooldown <= 0) {
+        const dmg = enemy.damage ?? 10;
+
+        console.log(`[Collision#${this._dbg.id}] DAMAGE`, {
+          enemy: enemy.constructor?.name,
+          enemyDamage: enemy.damage,
+          usedDamage: dmg,
+          playerHP_before: player.hp,
+        });
+
+        player.takeDamage(dmg);
+
+        console.log(`[Collision#${this._dbg.id}] DAMAGE_AFTER`, {
+          playerHP_after: player.hp,
+        });
+
         if (this._dbg.enabled) {
           console.log(`[Collision#${this._dbg.id}] DAMAGE`, {
             playerHP: player.hp,
