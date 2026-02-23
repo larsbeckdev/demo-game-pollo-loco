@@ -92,6 +92,9 @@
             v-model:value="selectedLevel"
             :options="levelOptions"
             :disabled="screen === 'playing'" />
+          <n-button type="primary" secondary @click="applySelectedLevel">
+            Level laden
+          </n-button>
           <div style="opacity: 0.75; font-size: 12px; margin-top: 6px">
             (Levelwechsel ist deaktiviert während du spielst – erst im
             Intro/Endscreen.)
