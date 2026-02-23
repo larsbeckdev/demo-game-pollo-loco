@@ -1,3 +1,15 @@
+/* ============================================================================
+  CollisionSystem
+  ----------------------------------------------------------------------------
+  Central collision manager of the game world
+
+  Responsibilities:
+  - Player vs Enemy (stomp / damage)
+  - Bottle vs Enemy
+  - Player vs Coins (collectables)
+  - Damage cooldown handling
+============================================================================ */
+
 export default class CollisionSystem {
   constructor(world) {
     this.world = world;
@@ -10,8 +22,6 @@ export default class CollisionSystem {
     this._dbg = {
       enabled: true,
       deep: false,
-      lastCooldownLog: 0,
-      lastAabbLog: 0,
       id: Math.random().toString(16).slice(2, 6),
     };
 
@@ -24,17 +34,13 @@ export default class CollisionSystem {
     const prevCooldown = this.damageCooldown;
     this.damageCooldown = Math.max(0, this.damageCooldown - dt);
 
-    if (
-      this._dbg.enabled &&
-      prevCooldown > 0 &&
-      this.damageCooldown === 0
-    ) {
+    if (this._dbg.enabled && prevCooldown > 0 && this.damageCooldown === 0) {
       console.log(`[Collision#${this._dbg.id}] damageCooldown reset`);
     }
 
     this._collidePlayerEnemies();
     this._collideBottleEnemies();
-    this._collideCollectables();
+    this._collidePlayerCoins(); // ✅ Coins
   }
 
   // =====================================================
@@ -83,7 +89,6 @@ export default class CollisionSystem {
       if (this.damageCooldown <= 0) {
         if (this._dbg.enabled) {
           console.log(`[Collision#${this._dbg.id}] SIDE DAMAGE`, {
-            cooldownBefore: this.damageCooldown,
             playerHP: player.hp,
           });
         }
@@ -130,42 +135,48 @@ export default class CollisionSystem {
   }
 
   // =====================================================
-  // PLAYER ↔ COLLECTABLE
+  // PLAYER ↔ COINS
+  // - NOTE: world.collectables are coins in your game
   // =====================================================
 
-  _collideCollectables() {
+  _collidePlayerCoins() {
     const world = this.world;
     const player = world.character;
     if (!player) return;
 
+    // Keep compatibility: your World still uses "collectables"
+    const coins = world.collectables ?? [];
+
     const playerBounds = player.getBounds();
 
-    for (const collectable of world.collectables) {
-      if (collectable.collected) continue;
+    for (const coin of coins) {
+      if (coin.collected) continue;
 
-      if (this._aabb(playerBounds, collectable.bounds)) {
+      // coin.bounds must be {x,y,w,h}
+      if (this._aabb(playerBounds, coin.bounds)) {
         if (this._dbg.enabled) {
-          console.log(`[Collision#${this._dbg.id}] COLLECT`, {
-            type: collectable.type,
-            x: collectable.bounds?.x,
+          console.log(`[Collision#${this._dbg.id}] COIN COLLECT`, {
+            type: coin.type ?? "coin",
+            x: coin.bounds?.x,
+            y: coin.bounds?.y,
           });
         }
 
-        collectable.onCollect?.(world);
+        coin.onCollect?.(world);
       }
     }
 
-    const before = world.collectables.length;
+    const before = coins.length;
 
-    world.collectables = world.collectables.filter(
-      (c) => !c.collected
-    );
+    // write back to world.collectables for compatibility
+    world.collectables = coins.filter((c) => !c.collected);
 
     const after = world.collectables.length;
 
     if (this._dbg.enabled && before !== after) {
-      console.log(`[Collision#${this._dbg.id}] Collectable cleanup`, {
+      console.log(`[Collision#${this._dbg.id}] Coin cleanup`, {
         removed: before - after,
+        remaining: after,
       });
     }
   }
@@ -176,10 +187,7 @@ export default class CollisionSystem {
 
   _aabb(a, b) {
     const hit =
-      a.x < b.x + b.w &&
-      a.x + a.w > b.x &&
-      a.y < b.y + b.h &&
-      a.y + a.h > b.y;
+      a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
     if (this._dbg.enabled && this._dbg.deep && hit) {
       console.log(`[Collision#${this._dbg.id}] AABB HIT`, { a, b });
