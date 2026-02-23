@@ -30,7 +30,7 @@ export default class Game {
     // =====================================================
 
     this.debug = {
-      enabled: false, // Master switch
+      enabled: true, // Master switch
       deep: false, // Very detailed logs
       frameCount: 0,
       fpsTimer: 0,
@@ -39,8 +39,8 @@ export default class Game {
 
     if (this.debug.enabled) {
       console.log("%c[Game] INIT", "color:cyan;font-weight:bold;", {
-        canvasWidth: this.canvasElement.width,
-        canvasHeight: this.canvasElement.height,
+        // canvasWidth: this.canvasElement.width,
+        // canvasHeight: this.canvasElement.height,
         contextReady: !!this.canvasContext2D,
         worldReady: !!this.gameWorld,
       });
