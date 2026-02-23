@@ -29,8 +29,8 @@ export default class Character {
     this.onGround = true;
 
     // Health system
-    this.maxHp = 3;
-    this.hp = 3;
+    this.maxHp = 100;
+    this.hp = 100;
 
     this.invincible = false;
     this.invincibleTimer = 0;
