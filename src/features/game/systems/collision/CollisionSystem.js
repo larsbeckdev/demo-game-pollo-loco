@@ -94,7 +94,7 @@ export default class CollisionSystem {
         }
 
         if (typeof player.takeDamage === "function") {
-          player.takeDamage(1);
+          player.takeDamage(20);
           const hpPercent = Math.round((player.hp / player.maxHp) * 100);
           world.stats?.setHealth?.(hpPercent);
         }
