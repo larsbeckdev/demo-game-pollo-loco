@@ -53,7 +53,7 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
   position: absolute;
   inset: 0;
   pointer-events: none;
-  padding: 14px;
+  /* padding: 14px; */
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -69,9 +69,10 @@ const bossSrc = computed(() => bossBarSrc(props.stats.boss, props.color));
 /* Card wrapper */
 .hud-card {
   pointer-events: auto; /* enable interactions if you ever add buttons/tooltips */
-  border-radius: 12px;
+  border-radius: 8px;
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.2);
+  padding: 4px;
 }
 
 /* inner layout */
