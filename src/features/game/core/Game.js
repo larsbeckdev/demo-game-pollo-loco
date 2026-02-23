@@ -30,7 +30,7 @@ export default class Game {
     // =====================================================
 
     this.debug = {
-      enabled: true, // Master switch
+      enabled: false, // Master switch
       deep: false, // Very detailed logs
       frameCount: 0,
       fpsTimer: 0,
@@ -168,11 +168,11 @@ export default class Game {
 
     this.gameWorld.draw(ctx);
 
-    // if (this.debug.enabled && this.debug.frameCount % 120 === 0) {
-    //   console.log("%c[Game Render OK]", "color:purple;", {
-    //     cameraX: this.cameraSystem.x,
-    //     canvasWidth: canvas.width,
-    //   });
-    // }
+    if (this.debug.enabled && this.debug.frameCount % 120 === 0) {
+      console.log("%c[Game Render OK]", "color:purple;", {
+        cameraX: this.cameraSystem.x,
+        canvasWidth: canvas.width,
+      });
+    }
   }
 }
