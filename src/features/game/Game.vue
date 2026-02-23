@@ -120,7 +120,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import Game from "@/features/game/core/Game.js";
 
 // UI
-import { Fullscreen } from "lucide-vue-next";
+import { Fullscreen, Settings } from "lucide-vue-next";
 import GameHud from "@/features/game/ui/hud/GameHud.vue";
 
 /* ============================================================================
