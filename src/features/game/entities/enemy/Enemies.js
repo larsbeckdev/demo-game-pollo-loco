@@ -151,6 +151,8 @@ class EnemyBase {
     this.speed = speed;
     this.direction = direction;
 
+    this.damage = damage;
+
     this.patrolMinX = patrolMinX;
     this.patrolMaxX = patrolMaxX;
 
