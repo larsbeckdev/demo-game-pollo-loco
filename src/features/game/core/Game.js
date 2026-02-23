@@ -2,6 +2,7 @@ import Background from "@/features/game/rendering/Background.js";
 import Camera from "@/features/game/rendering/Camera.js";
 import Keyboard from "@/features/game/core/input/Keyboard.js";
 import World from "@/features/game/core/world/World.js";
+import { level1, level2, level3, level4 } from "@/features/game/levels";
 
 export default class Game {
   constructor(canvasElement) {
@@ -19,7 +20,7 @@ export default class Game {
       canvas: this.canvasElement,
       camera: this.cameraSystem,
       keyboard: this.keyboardInput,
-      level: level2, 
+      level: level2,
     });
 
     this.lastFrameTimestampMilliseconds = 0;
