@@ -77,6 +77,7 @@ export default class World {
     ];
 
     this.enemySpawnSystem = new EnemySpawnSystem(this);
+    this.coinSpawnSystem = new CoinSpawnSystem(this);
 
     // coins
     this.coins = [];
