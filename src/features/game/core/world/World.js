@@ -22,7 +22,7 @@ export default class World {
     // DEBUG CONFIG
     // =====================================================
     this._dbg = {
-      enabled: true,
+      enabled: false,
       deep: false,
       id: Math.random().toString(16).slice(2, 6),
       frameCounter: 0,
