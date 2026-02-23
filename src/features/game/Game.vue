@@ -4,14 +4,16 @@
     <!-- Render canvas -->
     <canvas ref="canvas" class="game-canvas"></canvas>
 
-    <!-- UI overlay -->
+    <!-- ✅ HUD (Statusbars) nur im Spiel -->
+    <GameHud
+      v-if="screen === 'playing'"
+      class="hud-layer"
+      :stats="hudStats"
+      :showBoss="hudStats.boss < 100"
+      color="orange" />
+
+    <!-- UI overlay (Buttons oben rechts) -->
     <div class="ui">
-      <!-- ✅ HUD (Statusbars) nur im Spiel -->
-      <GameHud
-        v-if="screen === 'playing'"
-        :stats="hudStats"
-        :showBoss="hudStats.boss < 100"
-        color="orange" />
       <!-- Fullscreen button -->
       <n-button
         size="small"
@@ -25,12 +27,12 @@
       </n-button>
     </div>
 
-    <!-- ✅ NEU: Intro/Outro Overlay -->
+    <!-- ✅ Intro/Outro Overlay -->
     <div v-if="screen !== 'playing'" class="screen-overlay">
       <div class="screen-stage">
         <img class="screen-image" :src="screenImage" alt="" />
 
-        <!-- ✅ Button-Layer über dem Bild -->
+        <!-- Button-Layer über dem Bild -->
         <div class="screen-actions" @click.stop>
           <n-button
             class="start-button"
@@ -49,38 +51,105 @@
 <script setup>
 // Vue imports
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+
+// Game
 import Game from "@/features/game/core/Game.js";
+
+// UI
 import { Fullscreen } from "lucide-vue-next";
 import GameHud from "@/features/game/ui/hud/GameHud.vue";
 
-// DOM references
+/* ============================================================================
+  DEBUG (Abgabe: auf false lassen)
+  - Wenn DEBUG true ist, bekommst du Logs (nicht checklist-konform).
+============================================================================ */
+
+const DEBUG = false;
+
+function debugLog(...args) {
+  if (!DEBUG) return;
+  console.log(...args);
+}
+
+/* ============================================================================
+  DOM refs
+============================================================================ */
+
 const wrap = ref(null);
 const canvas = ref(null);
-let game;
+let game = null;
 
-// ✅ NEU: UI screen state
-// intro | playing | win | lose
+/* ============================================================================
+  Screen State
+  - intro | playing | win | lose
+============================================================================ */
+
 const screen = ref("intro");
 
-// ✅ NEU: overlay image url
+/* ============================================================================
+  HUD Stats (Statusbars)
+  - Werte werden aus world.stats synchronisiert
+============================================================================ */
+
+const hudStats = ref({
+  health: 100,
+  coins: 0,
+  bottles: 100,
+  boss: 100,
+});
+
+function syncHud() {
+  const stats = game?.gameWorld?.stats;
+  if (!stats) return;
+
+  hudStats.value = {
+    health: stats.health ?? 100,
+    coins: stats.coins ?? 0,
+    bottles: stats.bottles ?? 100,
+    boss: stats.boss ?? 100,
+  };
+}
+
+/* ============================================================================
+  Overlay Image Mapping
+  - Passe die Pfade an deine echten Dateien an
+============================================================================ */
+
 const screenImage = computed(() => {
   if (screen.value === "intro")
     return "/images/9_intro_outro_screens/start/startscreen_1.png";
+
   if (screen.value === "win")
     return "/images/9_intro_outro_screens/You won, you lost/You Win A.png";
+
+  // lose
   return "/images/9_intro_outro_screens/You won, you lost/You lost.png";
 });
 
-// Toggle fullscreen
+/* ============================================================================
+  Fullscreen
+============================================================================ */
+
 function toggleFullscreen() {
   const el = wrap.value;
+  if (!el) return;
+
   if (!document.fullscreenElement) el.requestFullscreen();
   else document.exitFullscreen();
 }
 
-// ✅ NEU: create game instance (and wire win/lose)
+/* ============================================================================
+  Game Setup
+  - Erstellt Game Instanz
+  - HUD Sync Timer
+  - Win/Lose Callbacks
+============================================================================ */
+
 function createGame() {
   const c = canvas.value;
+  if (!c) return;
+
+  // Fixed internal resolution (CSS skaliert responsiv)
   c.width = 800;
   c.height = 450;
 
@@ -89,51 +158,73 @@ function createGame() {
   // HUD sync interval (simple + stable)
   game.__hudInterval = setInterval(syncHud, 100);
 
-  // ✅ NEU: callbacks (Game muss die aufrufen)
+  // Callbacks (WICHTIG: Game.js muss diese auch wirklich aufrufen!)
+  // => In Game.update() muss sowas passieren:
+  //    if (world.state === "won") this.onWin?.();
+  //    if (world.state === "lost") this.onLose?.();
   game.onWin = () => {
     screen.value = "win";
     game?.stop?.();
-    console.log("[Game] WIN");
+    debugLog("[UI] WIN -> screen=win");
   };
 
   game.onLose = () => {
     screen.value = "lose";
     game?.stop?.();
-    console.log("[Game] LOSE");
+    debugLog("[UI] LOSE -> screen=lose");
   };
+
+  // Initial HUD pull
+  syncHud();
+
+  debugLog("[UI] createGame()", { canvas: { w: c.width, h: c.height } });
 }
 
-// ✅ NEU: start/restart flow
+/* ============================================================================
+  Start / Restart Flow (ohne Reload)
+============================================================================ */
+
 function startGame() {
   screen.value = "playing";
   game?.start?.();
-  console.log("[Game] start");
+  debugLog("[UI] startGame()");
+}
+
+function stopGame() {
+  game?.stop?.();
+  debugLog("[UI] stopGame()");
 }
 
 function restartGame() {
+  // cleanup old
   if (game?.__hudInterval) clearInterval(game.__hudInterval);
-  game?.stop?.();
+  stopGame();
+
+  // rebuild fresh instance
   createGame();
   startGame();
+
+  debugLog("[UI] restartGame()");
 }
 
-// ✅ NEU: click overlay to start / restart
 function onOverlayClick() {
   if (screen.value === "intro") startGame();
   else restartGame();
 }
 
-// Mount lifecycle
+/* ============================================================================
+  Lifecycle
+============================================================================ */
+
 onMounted(() => {
-  createGame(); // ✅ NEU: init but DO NOT auto-start
-  console.log("[Game] mounted (waiting on intro)");
+  createGame(); // init but DO NOT auto-start
+  debugLog("[UI] mounted -> waiting on intro");
 });
 
-// Cleanup lifecycle
 onBeforeUnmount(() => {
-  game?.stop?.();
+  stopGame();
   if (game?.__hudInterval) clearInterval(game.__hudInterval);
-  console.log("[Game] beforeUnmount");
+  debugLog("[UI] beforeUnmount -> cleaned up");
 });
 </script>
 
@@ -149,12 +240,24 @@ onBeforeUnmount(() => {
   width: 100%;
   aspect-ratio: 16 / 9;
   display: block;
+
+  /* Tipp: Wenn dein Background sowieso alles zeichnet, lieber transparent */
   background: var(--ds-card-bg);
+
   border: 1px solid var(--ds-border);
   border-radius: 8px;
 }
 
-/* UI overlay */
+/* HUD layer (oben links) */
+.hud-layer {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 40;
+  pointer-events: none;
+}
+
+/* UI overlay (Buttons oben rechts) */
 .ui {
   position: absolute;
   top: 12px;
@@ -162,40 +265,39 @@ onBeforeUnmount(() => {
   z-index: 50;
 }
 
-/* ✅ Screen overlay (liegt über Canvas) */
+/* Screen overlay */
 .screen-overlay {
   position: absolute;
   inset: 0;
   z-index: 20;
   border-radius: 8px;
-  overflow: hidden; /* wichtig damit Bild + Button nicht rauslaufen */
+  overflow: hidden;
   background: var(--ds-overlay);
 }
 
-/* ✅ Stage ist der relative Container fürs Bild */
+/* Stage is relative container for image + actions */
 .screen-stage {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-/* ✅ Bild füllt Stage */
+/* Image fills stage */
 .screen-image {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* oder: contain (siehe unten) */
+  object-fit: cover; /* alternativ: contain */
   display: block;
 }
 
-/* ✅ Button liegt über dem Bild */
+/* Button overlay */
 .screen-actions {
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center; /* unten mittig */
-  /* padding: 18px; */
+  place-items: center;
 }
 
 .start-button {
@@ -208,22 +310,15 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
-.start-button .n-button__content .n-button__border {
-}
-
-/* ✅ Optional: Lesbarkeit unten verbessern */
+/* Optional: readability layer */
 .screen-actions::before {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 100%;
+  inset: 0;
   background: var(--ds-overlay);
   pointer-events: none;
 }
 
-/* Button muss über dem Gradient liegen */
 .screen-actions > * {
   position: relative;
   z-index: 1;
