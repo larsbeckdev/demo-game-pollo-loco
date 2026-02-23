@@ -136,6 +136,17 @@ export default class World {
 
     this._dbg.frameCounter++;
 
+    // Lose condition
+    if (this.character?.dead) {
+      this.state = "lost";
+    }
+
+    // Win condition (wenn Boss existiert und tot)
+    const boss = this.enemies?.find((e) => e instanceof BossChicken);
+    if (boss && !boss.alive) {
+      this.state = "won";
+    }
+
     // Log every ~60 frames
     if (this._dbg.frameCounter % 60 === 0) {
       console.log(`[World#${this._dbg.id}] UPDATE`, {
