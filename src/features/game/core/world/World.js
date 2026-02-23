@@ -1,10 +1,3 @@
-/* ============================================================================
-  Imports
-  - Entities: Character and Enemy
-  - Level data: default level configuration
-  - Systems: Movement, Throw, Collision
-============================================================================ */
-
 import Character from "@/features/game/entities/character/Character.js";
 import Enemy from "@/features/game/entities/enemy/Enemy.js";
 import { level1 } from "@/features/game/levels/level1.js";
@@ -13,98 +6,137 @@ import MovementSystem from "@/features/game/systems/movement/MovementSystem.js";
 import ThrowSystem from "@/features/game/systems/throw/ThrowSystem.js";
 import CollisionSystem from "@/features/game/systems/collision/CollisionSystem.js";
 
-import Coin from "@/features/game/entities/collectables/Coin.js"; // add
-import SalsaBottlePickup from "@/features/game/entities/collectables/SalsaBottlePickup.js"; // add
-import StatsStore from "@/features/game/core/stats/StatsStore.js"; // add (optional but recommended)
-import SoundManager from "@/features/game/core/audio/SoundManager.js"; // add (optional but recommended)
-
-/* ============================================================================
-  World
-  - Holds references to canvas, camera, input, and current level
-  - Owns all entities (player, enemies, bottles, collectables)
-  - Owns and calls all systems in the correct order
-============================================================================ */
+import Coin from "@/features/game/entities/collectables/Coin.js";
+import SalsaBottlePickup from "@/features/game/entities/collectables/SalsaBottlePickup.js";
+import StatsStore from "@/features/game/core/stats/StatsStore.js";
+import SoundManager from "@/features/game/core/audio/SoundManager.js";
 
 export default class World {
-  /* ==========================================================================
-    Constructor
-    - Stores shared references (canvas, camera, keyboard, level)
-    - Calculates ground position
-    - Creates initial entities
-    - Defines world boundaries
-    - Creates systems
-  ========================================================================== */
-
   constructor({ canvas, camera, keyboard, level = level1 } = {}) {
-    /* ------------------------------------------------------------------------
-      Shared references
-    ------------------------------------------------------------------------ */
-
     this.canvas = canvas;
     this.camera = camera;
     this.keyboard = keyboard;
     this.level = level;
 
-    /* ------------------------------------------------------------------------
-      Ground setup
-    ------------------------------------------------------------------------ */
+    // =====================================================
+    // DEBUG CONFIG
+    // =====================================================
+    this._dbg = {
+      enabled: true,
+      deep: false,
+      id: Math.random().toString(16).slice(2, 6),
+      frameCounter: 0,
+    };
+
+    // -----------------------------------------------------
+    // Ground
+    // -----------------------------------------------------
 
     this.groundY = 398;
 
-    /* ------------------------------------------------------------------------
-      Player setup
-    ------------------------------------------------------------------------ */
+    // -----------------------------------------------------
+    // Player
+    // -----------------------------------------------------
 
     this.character = new Character({ groundY: this.groundY });
 
-    /* ------------------------------------------------------------------------
-      Stats + Sound (Phase 4) // add
-      - stats: coins, bottles, health
-      - sound: simple sfx playback
-    ------------------------------------------------------------------------ */
+    // -----------------------------------------------------
+    // Stats + Sound
+    // -----------------------------------------------------
 
-    this.stats = new StatsStore({ health: 100 }); // add
-    this.sound = new SoundManager(); // add
-    this.sound.register("coin", "/audio/coin.mp3", { volume: 0.6 }); // add
-    this.sound.register("bottle", "/audio/bottle.mp3", { volume: 0.6 }); // add
+    this.stats = new StatsStore({ health: 100 });
+    this.sound = new SoundManager();
 
-    /* ------------------------------------------------------------------------
-      Entities setup
-    ------------------------------------------------------------------------ */
+    this.sound.register("coin", "/audio/coin.mp3", { volume: 0.6 });
+    this.sound.register("bottle", "/audio/bottle.mp3", { volume: 0.6 });
+
+    // -----------------------------------------------------
+    // Entities
+    // -----------------------------------------------------
 
     this.enemies = [new Enemy({ x: 600, groundY: this.groundY, scale: 0.5 })];
 
     this.collectables = [
-      new Coin({ x: 420, y: this.groundY - 120 }), // add
-      new Coin({ x: 480, y: this.groundY - 120 }), // add
-      // new SalsaBottlePickup({ x: 680, y: this.groundY - 70 }), // add
-    ]; // add
+      new Coin({ x: 420, y: this.groundY - 120 }),
+      new Coin({ x: 480, y: this.groundY - 120 }),
+      // new SalsaBottlePickup({ x: 680, y: this.groundY - 70 }),
+    ];
 
     this.bottles = [];
 
-    /* ------------------------------------------------------------------------
-      World size / boundaries
-    ------------------------------------------------------------------------ */
+    // -----------------------------------------------------
+    // World Size
+    // -----------------------------------------------------
 
     const worldWidthFromLevel =
       this.level.worldWidth !== undefined ? this.level.worldWidth : 4000;
 
     this.worldWidth = worldWidthFromLevel;
 
-    /* ------------------------------------------------------------------------
-      Systems setup
-    ------------------------------------------------------------------------ */
+    // -----------------------------------------------------
+    // Systems
+    // -----------------------------------------------------
 
     this.movementSystem = new MovementSystem(this);
     this.throwSystem = new ThrowSystem(this);
     this.collisionSystem = new CollisionSystem(this);
+
+    // -----------------------------------------------------
+    // INIT LOG
+    // -----------------------------------------------------
+
+    if (this._dbg.enabled) {
+      console.log(
+        `%c[World#${this._dbg.id}] INIT`,
+        "color:cyan;font-weight:bold;",
+        {
+          groundY: this.groundY,
+          worldWidth: this.worldWidth,
+          enemies: this.enemies.length,
+          collectables: this.collectables.length,
+          bottles: this.bottles.length,
+          level: this.level?.name ?? "unknown",
+        },
+      );
+    }
   }
+
+  // =====================================================
+  // UPDATE
+  // =====================================================
 
   update(dt) {
     this.movementSystem.update(dt);
     this.throwSystem.update(dt);
     this.collisionSystem.update(dt);
+
+    if (!this._dbg.enabled) return;
+
+    this._dbg.frameCounter++;
+
+    // Log every ~60 frames
+    if (this._dbg.frameCounter % 60 === 0) {
+      console.log(`[World#${this._dbg.id}] UPDATE`, {
+        dt: Number(dt.toFixed(2)),
+        enemiesAlive: this.enemies.filter((e) => e.alive).length,
+        bottlesActive: this.bottles.filter((b) => b.alive).length,
+        collectablesLeft: this.collectables.length,
+        playerX: Number(this.character?.x?.toFixed?.(1) ?? 0),
+        cameraX: Number(this.camera?.x?.toFixed?.(1) ?? 0),
+      });
+    }
+
+    if (this._dbg.deep) {
+      console.log(`[World#${this._dbg.id}] DEEP UPDATE`, {
+        playerState: this.character?.state,
+        playerVy: this.character?.vy,
+      });
+    }
   }
+
+  // =====================================================
+  // DRAW
+  // =====================================================
 
   draw(ctx) {
     this.character.draw(ctx, this.camera.x);
@@ -117,13 +149,20 @@ export default class World {
       bottle.draw(ctx, this.camera.x);
     }
 
-    /* ------------------------------------------------------------------------
-      Collectables draw // add
-    ------------------------------------------------------------------------ */
-
     for (const item of this.collectables) {
-      // add
-      item.draw(ctx, this.camera.x); // add
-    } // add
+      item.draw(ctx, this.camera.x);
+    }
+
+    // Throttled draw log
+    if (this._dbg.enabled && this._dbg.frameCounter % 120 === 0) {
+      console.log(`[World#${this._dbg.id}] DRAW OK`, {
+        cameraX: Number(this.camera?.x?.toFixed?.(1) ?? 0),
+        entitiesDrawn:
+          1 +
+          this.enemies.length +
+          this.bottles.length +
+          this.collectables.length,
+      });
+    }
   }
 }
