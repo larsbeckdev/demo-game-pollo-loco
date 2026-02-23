@@ -360,7 +360,7 @@ export default class Character {
     }
   }
 
-  takeDamage() {
+  takeDamage(amount = 1) {
     if (this.dead || this.invincible) {
       if (this._dbg.enabled) {
         console.log("[Character] takeDamage blocked", {
@@ -371,7 +371,11 @@ export default class Character {
       return;
     }
 
-    this.hp--;
+    // ✅ clamp + use amount
+    const dmg = Number.isFinite(amount) ? Math.max(0, amount) : 1;
+
+    const before = this.hp;
+    this.hp = Math.max(0, this.hp - dmg);
 
     this.invincible = true;
     this.invincibleTimer = this.invincibleDuration;
@@ -383,7 +387,9 @@ export default class Character {
 
     if (this._dbg.enabled) {
       console.log("[Character] took damage", {
-        hp: this.hp,
+        before,
+        damage: dmg,
+        after: this.hp,
         invincibleDuration: this.invincibleDuration,
         hurtDuration: this.hurtDuration,
       });
