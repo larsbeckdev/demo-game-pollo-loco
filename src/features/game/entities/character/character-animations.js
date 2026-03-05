@@ -5,7 +5,7 @@ import {
 } from "@/features/game/utils/animation/frame-paths.js";
 
 export function createCharacterAnimations() {
-  const DEBUG = false; // <- hier ausschalten wenn fertig
+  const DEBUG = false; 
   const DEEP = false;
 
   const basePath = "/images/2_character_pepe";

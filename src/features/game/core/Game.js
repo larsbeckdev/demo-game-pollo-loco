@@ -31,11 +31,8 @@ export default class Game {
 
     this.lastFrameTimestampMilliseconds = 0;
 
-    // =====================================================
-    // DEBUG CONFIG
-    // =====================================================
     this.debug = {
-      enabled: true,
+      enabled: false,
       deep: false,
       frameCount: 0,
     };
@@ -50,21 +47,41 @@ export default class Game {
   }
 
   // =====================================================
+  // LEVEL INFO (für UI)
+  // =====================================================
+  getLevelIndex() {
+    return this.levelIndex; // 0..3
+  }
+
+  getLevelNumber() {
+    return this.levelIndex + 1; // 1..4
+  }
+
+  getLevelId() {
+    return this.gameWorld?.level?.id ?? `level${this.getLevelNumber()}`;
+  }
+
+  hasNextLevel() {
+    return this.levelIndex < LEVELS.length - 1;
+  }
+
+  // optional helper (wird von deiner UI NICHT mehr benötigt)
+  goToNextLevel() {
+    if (!this.hasNextLevel()) return false;
+    this.loadLevel(this.levelIndex + 1);
+    return true;
+  }
+
+  // =====================================================
   // LEVEL LOADING
   // =====================================================
   loadLevel(index) {
     this.levelIndex = Math.max(0, Math.min(index, LEVELS.length - 1));
 
-    // stop dt spikes after level switch
     this.lastFrameTimestampMilliseconds = 0;
-
-    // reset camera
     this.cameraSystem.x = 0;
-
-    // optional: reset debug counter
     this.debug.frameCount = 0;
 
-    // create new world instance
     this.gameWorld = new World({
       canvas: this.canvasElement,
       camera: this.cameraSystem,
@@ -72,8 +89,7 @@ export default class Game {
       level: LEVELS[this.levelIndex],
     });
 
-    // IMPORTANT: start state should be intro by default
-    // (Game.vue sets it to "playing" on Start)
+    // Default: intro (UI setzt "playing" bei Start)
     this.gameWorld.state = "intro";
 
     if (this.debug.enabled) {
@@ -82,7 +98,8 @@ export default class Game {
         "color:deepskyblue;font-weight:bold;",
         {
           levelIndex: this.levelIndex,
-          levelId: this.gameWorld?.level?.id,
+          levelNumber: this.getLevelNumber(),
+          levelId: this.getLevelId(),
         },
       );
     }
@@ -97,7 +114,10 @@ export default class Game {
     this.isGameRunning = true;
 
     if (this.debug.enabled) {
-      console.log("%c[Game] START", "color:lime;font-weight:bold;");
+      console.log("%c[Game] START", "color:lime;font-weight:bold;", {
+        levelNumber: this.getLevelNumber(),
+        levelId: this.getLevelId(),
+      });
     }
 
     const gameLoop = (currentTimestampMilliseconds) => {
@@ -151,19 +171,38 @@ export default class Game {
 
     const state = this.gameWorld?.state;
 
+    // ✅ WIN: auto-load next level (if exists), STOP, notify UI
     if (state === "won") {
-      // not final level: go to next level, but let UI handle start
-      if (this.levelIndex < LEVELS.length - 1) {
+      const isFinal = !this.hasNextLevel();
+
+      if (this.debug.enabled) {
+        console.log("%c[Game] WON", "color:lime;font-weight:bold;", {
+          justFinishedLevel: this.getLevelNumber(),
+          justFinishedLevelId: this.getLevelId(),
+          isFinal,
+        });
+      }
+
+      // stop loop so nothing continues in background
+      this.stop();
+
+      // if not final -> load next level NOW (but keep it in intro)
+      if (!isFinal) {
         this.loadLevel(this.levelIndex + 1);
       }
 
-      // always notify UI -> show win screen
-      this.onWin?.();
+      // tell UI: show win screen (UI button will START)
+      this.onWin?.({ isFinal });
       return;
     }
 
+    // ✅ LOSE: stop + notify UI
     if (state === "lost") {
-      this.onLose?.();
+      this.stop();
+      this.onLose?.({
+        levelNumber: this.getLevelNumber(),
+        levelId: this.getLevelId(),
+      });
       return;
     }
 
@@ -181,6 +220,7 @@ export default class Game {
         playerY: Number(player?.y?.toFixed?.(1) ?? 0),
         state: player?.state,
         levelId: this.gameWorld?.level?.id,
+        levelNumber: this.getLevelNumber(),
       });
     }
 

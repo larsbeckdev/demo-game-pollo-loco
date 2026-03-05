@@ -2,32 +2,32 @@
   ParallaxLayer
   - Represents a single background layer
   - Moves horizontally depending on camera position and speed factor
+  - Can also move by itself (autoSpeed)
   - Automatically tiles itself to avoid visible gaps
 ============================================================================ */
 
 export default class ParallaxLayer {
-  /* ==========================================================================
-    Constructor
-    - src: image path
-    - speed: parallax factor (lower = slower movement)
-    - y: vertical offset
-  ========================================================================== */
-
-  constructor({ src, speed = 1, y = 0 }) {
-    /* ------------------------------------------------------------------------
-      Configuration
-    ------------------------------------------------------------------------ */
-
+  /**
+   * @param {object} opts
+   * @param {string} opts.src
+   * @param {number} [opts.speed=1]      Parallax factor (lower = slower movement)
+   * @param {number} [opts.y=0]          Vertical offset
+   * @param {number} [opts.autoSpeed=0]  Auto scroll (px per dt-unit, dt≈1 at 60fps)
+   * @param {number} [opts.overlap=2]    Extra px overlap to hide seams
+   */
+  constructor({ src, speed = 1, y = 0, autoSpeed = 0, overlap = 2 } = {}) {
     this.src = src;
     this.speed = speed;
     this.y = y;
 
-    /* ------------------------------------------------------------------------
-      Image loading
-      - Create Image object
-      - Track loading state to avoid drawing before ready
-    ------------------------------------------------------------------------ */
+    // ✅ auto movement
+    this.autoSpeed = autoSpeed;
+    this.autoX = 0;
 
+    // ✅ seam helper
+    this.overlap = overlap;
+
+    // Image loading
     this.img = new Image();
     this.loaded = false;
 
@@ -35,73 +35,53 @@ export default class ParallaxLayer {
       this.loaded = true;
     };
 
+    this.img.onerror = () => {
+      // don't crash the game loop if an image fails
+      this.loaded = false;
+      console.error("[ParallaxLayer] image failed:", src);
+    };
+
     this.img.src = src;
   }
 
-  /* ==========================================================================
-    draw
-    - Draws the layer tiled horizontally
-    - ctx: canvas 2D rendering context
-    - canvasWidth: width of the canvas
-    - canvasHeight: height of the canvas
-    - cameraX: horizontal camera offset
-  ========================================================================== */
+  // called every frame
+  update(dt = 1) {
+    const d = Number.isFinite(dt) ? dt : 1;
+    this.autoX += this.autoSpeed * d;
+  }
 
   draw(ctx, canvasWidth, canvasHeight, cameraX = 0) {
-    /* ------------------------------------------------------------------------
-      Skip rendering if image is not loaded yet
-    ------------------------------------------------------------------------ */
-
     if (!this.loaded) return;
-
-    /* ------------------------------------------------------------------------
-      Original image dimensions
-    ------------------------------------------------------------------------ */
+    if (!this.img.complete || this.img.naturalWidth === 0) return;
 
     const imageWidth = this.img.width;
     const imageHeight = this.img.height;
 
-    /* ------------------------------------------------------------------------
-      Scale calculation
-      - Scale image so that it always fills the full canvas height
-    ------------------------------------------------------------------------ */
-
+    // scale to full canvas height
     const scale = canvasHeight / imageHeight;
 
-    // ✅ CHANGE: avoid subpixel seams by snapping draw sizes to integers
-    const rawDrawWidth = imageWidth * scale;
-    const drawWidth = Math.ceil(rawDrawWidth);
+    // snap to ints (helps avoid subpixel seams)
+    const drawWidth = Math.ceil(imageWidth * scale);
     const drawHeight = Math.ceil(canvasHeight);
 
-    /* ------------------------------------------------------------------------
-      Parallax offset calculation
-      - Multiply cameraX by speed factor
-      - Use modulo to create seamless horizontal tiling
-    ------------------------------------------------------------------------ */
+    // combined movement: camera parallax + auto drift
+    const totalMove = cameraX * this.speed + this.autoX;
 
-    // CHANGE: stable modulo (always positive)
-    const move = (cameraX * this.speed) % drawWidth;
-    const offsetX = -((move + drawWidth) % drawWidth);
+    // stable positive modulo
+    const move = ((totalMove % drawWidth) + drawWidth) % drawWidth;
+    const offsetX = -move;
 
-    /* ------------------------------------------------------------------------
-      Horizontal tiling
-      - Draw multiple copies of the image next to each other
-      - Ensures there are no visible gaps when scrolling
-    ------------------------------------------------------------------------ */
+    // ✅ draw enough tiles to always cover screen, even with rounding/overlap
+    // Start further left and go further right than needed
+    const startX = offsetX - drawWidth - this.overlap;
+    const endX = canvasWidth + drawWidth + this.overlap;
 
-    // ✅ CHANGE: small overlap to hide 1px gaps from scaling / resampling
-    const overlap = 2;
-
-    for (
-      let xPosition = offsetX - drawWidth;
-      xPosition < canvasWidth + drawWidth;
-      xPosition += drawWidth
-    ) {
+    for (let x = startX; x < endX; x += drawWidth) {
       ctx.drawImage(
         this.img,
-        Math.round(xPosition), // ✅ CHANGE: pixel snapping
-        Math.round(this.y), // ✅ CHANGE: pixel snapping
-        drawWidth + overlap, // ✅ CHANGE: overlap
+        Math.round(x),
+        Math.round(this.y),
+        drawWidth + this.overlap,
         drawHeight,
       );
     }

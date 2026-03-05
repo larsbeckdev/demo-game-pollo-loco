@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, watchEffect } from "vue";
 import { NCard } from "naive-ui";
 import {
   healthBarSrc,
@@ -41,7 +41,32 @@ import {
 const props = defineProps({
   stats: { type: Object, required: true },
   showBoss: { type: Boolean, default: false },
-  color: { type: String, default: "orange" }, // "blue" | "green" | "orange"
+  color: { type: String, default: "orange" },
+});
+
+// ✅ CHANGE: Debug-Flag + throttle, damit es NICHT spamt
+const HUD_DEBUG = false; // ✅ CHANGE
+let _lastLog = 0; // ✅ CHANGE
+
+watchEffect(() => {
+  if (!HUD_DEBUG) return; // ✅ CHANGE
+
+  const now = performance.now(); // ✅ CHANGE
+  if (now - _lastLog < 1000) return; // ✅ CHANGE (max 1 log/sec)
+  _lastLog = now; // ✅ CHANGE
+
+  console.log("[HUD] stats", {
+    health: props.stats?.health,
+    coins: props.stats?.coins,
+    bottles: props.stats?.bottles,
+    boss: props.stats?.boss,
+  });
+
+  console.log("[HUD] src", {
+    healthSrc: healthSrc.value,
+    coinSrc: coinSrc.value,
+    bottleSrc: bottleSrc.value,
+  });
 });
 
 const healthSrc = computed(() => healthBarSrc(props.stats.health, props.color));

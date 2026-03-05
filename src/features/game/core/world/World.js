@@ -25,7 +25,7 @@ export default class World {
     // -----------------------------------------------------
     // Game state
     // -----------------------------------------------------
-    this.state = "intro"; // "intro" | "playing" | "won" | "lost"
+    this.state = "intro"; // "intro" | "playing" | "paused" | "won" | "lost"
 
     // =====================================================
     // DEBUG CONFIG
@@ -53,7 +53,51 @@ export default class World {
     // -----------------------------------------------------
     this.stats = new StatsStore({ health: 100 });
     this.sound = new SoundManager();
-    this.sound.register("coin", "/audio/coin.mp3", { volume: 0.6 });
+    this._playedDeathSfx = false;
+    this.sound.register("gameStart", "/audio/game/gameStart.mp3", {
+      volume: 0.7,
+    });
+
+    this.sound.register("jump", "/audio/character/characterJump.wav", {
+      volume: 0.8,
+    });
+    this.sound.register("run", "/audio/character/characterRun.mp3", {
+      volume: 0.35,
+    });
+    this.sound.register("snore", "/audio/character/characterSnoring.mp3", {
+      volume: 0.4,
+    });
+
+    this.sound.register("hurt", "/audio/character/characterDamage.mp3", {
+      volume: 0.8,
+    });
+    this.sound.register("dead", "/audio/character/characterDead.wav", {
+      volume: 0.8,
+    });
+
+    this.sound.register("coin", "/audio/collectibles/collectSound.wav", {
+      volume: 0.6,
+    });
+    this.sound.register(
+      "bottleCollect",
+      "/audio/collectibles/bottleCollectSound.wav",
+      { volume: 0.6 },
+    );
+
+    this.sound.register("chickenDead1", "/audio/chicken/chickenDead.mp3", {
+      volume: 0.7,
+    });
+    this.sound.register("chickenDead2", "/audio/chicken/chickenDead2.mp3", {
+      volume: 0.7,
+    });
+
+    this.sound.register("bossApproach", "/audio/endboss/endbossApproach.wav", {
+      volume: 0.65,
+    });
+
+    this.sound.register("bottleBreak", "/audio/throwable/bottleBreak.mp3", {
+      volume: 0.7,
+    });
 
     // -----------------------------------------------------
     // World Size
@@ -117,15 +161,11 @@ export default class World {
     if (this._dbg?.enabled) {
       console.log("[World] state =", this.state);
     }
-    // ✅ Freeze world when not playing
-    // This prevents post-win/post-lose damage, spawns, and weird state flips.
-    if (this.state !== "playing") {
-      if (this._dbg.enabled) this._dbg.frameCounter++;
-      return;
-    }
+
+    if (this.state !== "playing") return;
 
     // -----------------------------------------------------
-    // 1) Systems
+    // 1) Systemsd
     // -----------------------------------------------------
     this.movementSystem.update(dt);
     this.throwSystem.update(dt);
@@ -139,11 +179,7 @@ export default class World {
     this.character?.update?.(dt);
 
     for (const enemy of this.enemies) {
-      enemy.update?.(dt);
-    }
-
-    for (const bottle of this.bottles) {
-      bottle.update?.(dt);
+      enemy.update?.(dt, this.character);
     }
 
     // -----------------------------------------------------
@@ -178,6 +214,8 @@ export default class World {
         this.enemies.push(boss);
         this.bossSpawned = true;
 
+        this.sound?.play?.("bossApproach");
+
         if (this._dbg.enabled) {
           console.log(`[World#${this._dbg.id}] BOSS SPAWNED`, {
             bossX,
@@ -198,12 +236,23 @@ export default class World {
     // 5) Game state (win/lose)
     // -----------------------------------------------------
     if (this.character?.dead) {
+      if (!this._playedDeathSfx) {
+        this.sound?.play?.("dead");
+        this._playedDeathSfx = true;
+      }
       this.state = "lost";
     }
 
     const boss = this.enemies.find((e) => e instanceof BossChicken);
-    if (boss && !boss.alive) {
-      this.state = "won";
+
+    if (boss && boss.isDefeated?.()) {
+      // ✅ warte kurz, damit Death-Anim sichtbar ist
+      const winAfter = 60; // frames (tweak)
+      const t = boss.deathTimer ?? 0;
+
+      if (t >= winAfter) {
+        this.state = "won";
+      }
     }
 
     // -----------------------------------------------------
@@ -240,6 +289,10 @@ export default class World {
     for (const bottle of this.bottles) {
       bottle.draw(ctx, this.camera.x);
     }
+
+    // for (const coin of this.coins) {
+    //   coin.draw(ctx, this.camera.x);
+    // }
 
     for (const coin of this.coins) {
       coin.draw(ctx, this.camera.x);

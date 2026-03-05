@@ -32,11 +32,12 @@ export default class Coin {
   ========================================================================== */
 
   get bounds() {
+    const padding = 18;
     return {
-      x: this.x,
-      y: this.y,
-      w: this.w,
-      h: this.h,
+      x: this.x + padding,
+      y: this.y + padding,
+      w: this.w - 2 * padding,
+      h: this.h - 2 * padding,
     };
   }
 
@@ -56,7 +57,12 @@ export default class Coin {
   draw(ctx, cameraX = 0) {
     if (this.collected) return;
 
-    ctx.drawImage(this.img, this.x - cameraX, this.y, this.w, this.h);
+    const x = this.x - cameraX;
+    const y = this.y;
+
+    if (this.img?.complete) {
+      ctx.drawImage(this.img, x, y, this.w, this.h);
+    }
   }
 
   /* ==========================================================================
@@ -68,7 +74,12 @@ export default class Coin {
 
     this.collected = true;
 
-    world.stats?.addCoin?.(1);
+    world.stats?.addCoin?.();
+
+    const THROW_COST = 4; // muss zu ThrowSystem passen
+    const THROWS_PER_COIN = 4; // du willst 4 Würfe pro Coin
+    world.stats?.addBottle?.(THROW_COST * THROWS_PER_COIN); // => 16
+
     world.sound?.play?.("coin");
   }
 }

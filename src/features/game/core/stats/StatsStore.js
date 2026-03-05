@@ -12,12 +12,12 @@ export default class StatsStore {
   }
 
   // Coins 0..100 (oder 0..10, wie du willst)
-  addCoin(amount = 1) {
+  addCoin(amount = 20) {
     this.coins = Math.max(0, Math.min(100, this.coins + amount));
   }
 
   // Bottles 0..100
-  addBottle(amount = 20) {
+  addBottle(amount = 4) {
     this.bottles = Math.max(0, Math.min(100, this.bottles + amount));
   }
 

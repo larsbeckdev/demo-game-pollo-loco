@@ -10,6 +10,8 @@
   - Damage cooldown handling
 ============================================================================ */
 
+import { BossChicken } from "@/features/game/entities/enemy/Enemies.js";
+
 export default class CollisionSystem {
   constructor(world) {
     this.world = world;
@@ -20,7 +22,7 @@ export default class CollisionSystem {
     // DEBUG CONFIG
     // =====================================================
     this._dbg = {
-      enabled: true,
+      enabled: false,
       deep: false,
       id: Math.random().toString(16).slice(2, 6),
     };
@@ -40,7 +42,7 @@ export default class CollisionSystem {
 
     this._collidePlayerEnemies();
     this._collideBottleEnemies();
-    this._collidePlayerCoins(); // ✅ Coins
+    this._collidePlayerCoins();
   }
 
   // =====================================================
@@ -60,7 +62,6 @@ export default class CollisionSystem {
       if (!enemy.alive) continue;
 
       const enemyBounds = enemy.getBounds();
-
       if (!this._aabb(playerBounds, enemyBounds)) continue;
 
       // --- STOMP ---
@@ -73,27 +74,39 @@ export default class CollisionSystem {
           });
         }
 
-        enemy.kill();
-
-        if (typeof player.bounce === "function") {
-          player.bounce();
-        } else {
-          player.vy = -10;
+        // Boss NICHT stomp-kill (optional: wenn du willst, hier blocken)
+        if (enemy instanceof BossChicken) {
+          // optional: bounce only
+          if (typeof player.bounce === "function") player.bounce();
+          else player.vy = -10;
+          continue;
         }
 
-        world.sound?.play?.("enemyKill");
+        enemy.kill();
+
+        if (typeof player.bounce === "function") player.bounce();
+        else player.vy = -10;
+
+        const sfx = Math.random() < 0.5 ? "chickenDead1" : "chickenDead2";
+        world.sound?.play?.(sfx);
         continue;
       }
 
       // --- DAMAGE ---
       if (this.damageCooldown <= 0) {
+        if (
+          enemy instanceof BossChicken &&
+          typeof enemy.isAttacking === "function"
+        ) {
+          if (!enemy.isAttacking()) continue;
+        }
+
         if (typeof player.takeDamage === "function") {
           const damage = enemy.damage ?? 10;
 
           if (this._dbg.enabled) {
             console.log(`[Collision#${this._dbg.id}] DAMAGE`, {
               enemy: enemy.constructor?.name,
-              enemyDamage: enemy.damage,
               usedDamage: damage,
               playerHP_before: player.hp,
             });
@@ -103,13 +116,6 @@ export default class CollisionSystem {
 
           const hpPercent = Math.round((player.hp / player.maxHp) * 100);
           world.stats?.setHealth?.(hpPercent);
-
-          if (this._dbg.enabled) {
-            console.log(`[Collision#${this._dbg.id}] DAMAGE_AFTER`, {
-              playerHP_after: player.hp,
-              hpPercent,
-            });
-          }
 
           world.sound?.play?.("hurt");
           this.damageCooldown = 45;
@@ -123,7 +129,8 @@ export default class CollisionSystem {
   // =====================================================
 
   _collideBottleEnemies() {
-    const { bottles, enemies } = this.world;
+    const world = this.world;
+    const { bottles, enemies } = world;
 
     for (const bottle of bottles) {
       if (!bottle.alive || bottle.state !== "flying") continue;
@@ -132,17 +139,41 @@ export default class CollisionSystem {
 
       for (const enemy of enemies) {
         if (!enemy.alive) continue;
-
         if (!this._aabb(bottleBounds, enemy.getBounds())) continue;
+
+        const isBoss = enemy instanceof BossChicken;
 
         if (this._dbg.enabled) {
           console.log(`[Collision#${this._dbg.id}] BOTTLE HIT`, {
+            enemy: enemy.constructor?.name,
+            isBoss,
             bottleX: bottle.x,
             enemyX: enemy.x,
           });
         }
 
+        // ✅ Boss: damage instead of kill
+        if (isBoss && typeof enemy.takeHit === "function") {
+          enemy.takeHit(1);
+
+          // Bossbar updaten (0..100)
+          const hp = enemy.hp ?? 0;
+          const maxHp = enemy.maxHp ?? 1;
+          const percent = Math.max(0, Math.round((hp / maxHp) * 100));
+          world.stats?.setBoss?.(percent);
+
+          const eb = enemy.getBounds();
+          const hitY = eb.y + eb.h * 0.5;
+          bottle.break?.(hitY);
+
+          bottle.break?.();
+          break;
+        }
+
+        // ✅ Normal enemies: kill on hit
         enemy.kill();
+        const sfx = Math.random() < 0.5 ? "chickenDead1" : "chickenDead2";
+        world.sound?.play?.(sfx);
         bottle.land?.();
         break;
       }
@@ -151,7 +182,6 @@ export default class CollisionSystem {
 
   // =====================================================
   // PLAYER ↔ COINS
-  // - NOTE: world.collectables are coins in your game
   // =====================================================
 
   _collidePlayerCoins() {
@@ -164,6 +194,8 @@ export default class CollisionSystem {
 
     for (const coin of coins) {
       if (coin.collected) continue;
+
+      // coin.bounds muss korrekt sein (du hast das schon angepasst)
       if (this._aabb(playerBounds, coin.bounds)) {
         if (this._dbg.enabled) {
           console.log(`[Collision#${this._dbg.id}] COIN COLLECT`, {
@@ -175,16 +207,7 @@ export default class CollisionSystem {
       }
     }
 
-    const before = coins.length;
     world.coins = coins.filter((c) => !c.collected);
-    const after = world.coins.length;
-
-    if (this._dbg.enabled && before !== after) {
-      console.log(`[Collision#${this._dbg.id}] Coin cleanup`, {
-        removed: before - after,
-        remaining: after,
-      });
-    }
   }
 
   // =====================================================
@@ -213,17 +236,6 @@ export default class CollisionSystem {
     const comingFromAbove = playerBottom <= enemyTop + tolerance;
     const falling = playerVy > 0;
 
-    const result = comingFromAbove && falling;
-
-    if (this._dbg.enabled && this._dbg.deep && result) {
-      console.log(`[Collision#${this._dbg.id}] STOMP DETECTED`, {
-        playerBottom,
-        enemyTop,
-        playerVy,
-        tolerance,
-      });
-    }
-
-    return result;
+    return comingFromAbove && falling;
   }
 }

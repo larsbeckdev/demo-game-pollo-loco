@@ -21,9 +21,9 @@ export default class Character {
     this.vx = 0;
     this.vy = 0;
 
-    this.speed = 4.8;
-    this.jumpForce = 14;
-    this.gravity = 0.8;
+    this.speed = 3.2;
+    this.jumpForce = 12;
+    this.gravity = 0.45;
 
     this.facing = 1;
     this.onGround = true;
@@ -360,6 +360,10 @@ export default class Character {
     }
   }
 
+  // =====================================================
+  // DAMAGE & DEATH
+  // =====================================================
+
   takeDamage(amount = 1) {
     if (this.dead || this.invincible) {
       if (this._dbg.enabled) {
@@ -408,6 +412,10 @@ export default class Character {
     }
   }
 
+  // =====================================================
+  // RENDERING
+  // =====================================================
+
   draw(ctx, cameraX = 0) {
     const dbg = this._dbg;
 
@@ -451,12 +459,50 @@ export default class Character {
     ctx.restore();
   }
 
+  // =====================================================
+  // THROW RULES
+  // =====================================================
+
+  canThrowBottle() {
+    if (this.dead) return false;
+    if (this.hurtActive) return false;
+    if (this.state === "long_idle") return false; // ✅ block in long idle
+    return true;
+  }
+
+  // Optional: beim ersten Throw-Press nur "aufwecken"
+  wakeUpFromLongIdle() {
+    if (this.state !== "long_idle") return false;
+
+    // reset long idle immediately
+    this.idleTimer = 0;
+    this.state = "idle";
+    this.play("idle");
+    return true; // ✅ was long idle -> woke up
+  }
+
+  // =====================================================
+  // ENEMY ↔ PLAYER
+  // =====================================================
+
   getBounds() {
+    // ✅ Hitbox kleiner als Sprite (ähnlich wie bei Coin)
+    // Tweak: paddingX/paddingTop/paddingBottom bis es “fair” ist.
+    const paddingX = 18; // links/rechts schmaler
+    const paddingTop = 22; // oben runter (Kopf/Haare nicht so hittable)
+    const paddingBottom = 10; // unten etwas weniger (Füße eher hittable)
+
+    const x = this.x + paddingX;
+    const y = this.y - this.h + paddingTop;
+
+    const w = this.w - paddingX * 2;
+    const h = this.h - paddingTop - paddingBottom;
+
     const bounds = {
-      x: this.x,
-      y: this.y - this.h,
-      w: this.w,
-      h: this.h,
+      x,
+      y,
+      w: Math.max(1, w),
+      h: Math.max(1, h),
     };
 
     if (this._dbg.enabled && !Number.isFinite(bounds.x + bounds.y)) {

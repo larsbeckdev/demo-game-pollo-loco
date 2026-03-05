@@ -17,6 +17,11 @@ class FrameAnimation {
   constructor(paths, fps = 8, { loop = true, holdLast = false } = {}) {
     this.images = paths.map((src) => {
       const img = new Image();
+
+      // ✅ kleiner Lag-Fix beim Laden (Browser darf async decoden)
+      img.decoding = "async";
+      img.loading = "eager"; // optional, aber hilft oft
+
       img.src = src;
       return img;
     });
@@ -150,11 +155,17 @@ class EnemyBase {
     this.w = this.baseWidth * scale;
     this.h = this.baseHeight * scale;
 
+    // =========================
+    // HITBOX CONFIG
+    // =========================
+    this.hitboxPaddingX = this.w * 0.2; // 20% links & rechts kleiner
+    this.hitboxPaddingTop = this.h * 0.25; // oben kleiner
+    this.hitboxPaddingBottom = this.h * 0.1; // unten kleiner
+
     this.speed = speed;
     this.direction = direction;
 
     this.damage = damage;
-    console.log("[EnemyBase] damage =", this.damage);
 
     this.patrolMinX = patrolMinX;
     this.patrolMaxX = patrolMaxX;
@@ -317,10 +328,30 @@ class EnemyBase {
     }
 
     ctx.restore();
+
+    // DEBUG HITBOX
+    if (false) {
+      // <- auf true setzen zum Testen
+      const b = this.getBounds();
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x - cameraX, b.y, b.w, b.h);
+    }
   }
 
   getBounds() {
-    return { x: this.x, y: this.y - this.h, w: this.w, h: this.h };
+    const hitboxX = this.x + this.hitboxPaddingX;
+    const hitboxY = this.y - this.h + this.hitboxPaddingTop;
+
+    const hitboxW = this.w - this.hitboxPaddingX * 2;
+    const hitboxH = this.h - this.hitboxPaddingTop - this.hitboxPaddingBottom;
+
+    return {
+      x: hitboxX,
+      y: hitboxY,
+      w: hitboxW,
+      h: hitboxH,
+    };
   }
 
   kill() {
@@ -415,14 +446,17 @@ class BossChicken extends EnemyBase {
     scale = 1.0,
     patrolMinX = null,
     patrolMaxX = null,
+    hp = 8,
+
+    alertRange = 700,
+    attackRange = 240,
+
+    attackCooldown = 90, // ~1.5s
+    attackDuration = 30, // ~0.5s
+    hitStart = 10, // hit window start (frames)
+    hitEnd = 18, // hit window end (frames)
   } = {}) {
     const base = "/images/4_enemie_boss_chicken";
-    const walkPaths = makeFramePaths(`${base}/1_walk`, [
-      "G1.png",
-      "G2.png",
-      "G3.png",
-      "G4.png",
-    ]);
 
     super({
       x,
@@ -430,25 +464,283 @@ class BossChicken extends EnemyBase {
       scale,
       baseWidth: 250,
       baseHeight: 250,
-      speed: 0.8,
+      speed: 0.7,
       direction: -1,
       patrolMinX,
       patrolMaxX,
-      walkPaths,
+      walkPaths: makeFramePaths(`${base}/1_walk`, [
+        "G1.png",
+        "G2.png",
+        "G3.png",
+        "G4.png",
+      ]),
       walkFps: 6,
-      deadImageSrc: `${base}/5_dead/G26.png`,
-      deathLifetime: 240,
+      deadImageSrc: null,
+      deathLifetime: 120,
       damage: 20,
     });
 
-    this.maxHp = 5;
-    this.hp = 5;
+    this.maxHp = hp;
+    this.hp = hp;
+
+    // anti flip-jitter
+    this.turnCooldown = 0;
+    this.turnCooldownMax = 18; // statt 10
+    this.turnMargin = 10; // statt 6
+
+    // anims
+    this.alertAnim = new FrameAnimation(
+      makeFramePaths(`${base}/2_alert`, [
+        "G5.png",
+        "G6.png",
+        "G7.png",
+        "G8.png",
+        "G9.png",
+        "G10.png",
+        "G11.png",
+        "G12.png",
+      ]),
+      10,
+      { loop: true },
+    );
+
+    this.attackAnim = new FrameAnimation(
+      makeFramePaths(`${base}/3_attack`, [
+        "G13.png",
+        "G14.png",
+        "G15.png",
+        "G16.png",
+        "G17.png",
+        "G18.png",
+        "G19.png",
+        "G20.png",
+      ]),
+      12,
+      { loop: false, holdLast: false },
+    );
+
+    this.hurtAnim = new FrameAnimation(
+      makeFramePaths(`${base}/4_hurt`, ["G21.png", "G22.png", "G23.png"]),
+      10,
+      { loop: false, holdLast: false },
+    );
+
+    this.deadAnim = new FrameAnimation(
+      makeFramePaths(`${base}/5_dead`, ["G24.png", "G25.png", "G26.png"]),
+      8,
+      { loop: false, holdLast: true },
+    );
+
+    // state machine
+    this.mode = "walk"; // walk | alert | attack | hurt | dead
+    this.alertRange = alertRange;
+    this.attackRange = attackRange;
+
+    this.attackCooldownMax = attackCooldown;
+    this.attackCooldown = 0;
+
+    this.attackDuration = attackDuration;
+    this.attackTimer = 0;
+
+    this.hitStart = hitStart;
+    this.hitEnd = hitEnd;
+
+    this.hurtDuration = 18;
+    this.hurtTimer = 0;
+
+    this._defeated = false;
+  }
+
+  isDefeated() {
+    return this._defeated === true;
+  }
+
+  // ✅ sauberes "Hit Window" (elapsed statt rumrechnen)
+  isAttacking() {
+    if (!this.alive || this.mode !== "attack") return false;
+    const elapsed = this.attackDuration - this.attackTimer; // 0..attackDuration
+    return elapsed >= this.hitStart && elapsed <= this.hitEnd;
+  }
+
+  startAttack() {
+    this.mode = "attack";
+    this.attackTimer = this.attackDuration;
+    this.attackAnim.reset();
   }
 
   takeHit(damage = 1) {
     if (!this.alive) return;
-    this.hp -= damage;
+
+    const dmg = Number.isFinite(damage) ? Math.max(1, damage) : 1;
+    this.hp = Math.max(0, this.hp - dmg);
+
+    // ✅ hurt state
+    this.mode = "hurt";
+    this.hurtTimer = this.hurtDuration;
+    this.hurtAnim.reset();
+
+    // optional: cooldown damit er nicht sofort wieder attackt
+    this.attackCooldown = Math.max(this.attackCooldown, 18);
+
     if (this.hp <= 0) this.kill();
+  }
+
+  kill() {
+    if (!this.alive) return;
+    this.alive = false;
+    this.mode = "dead";
+    this._defeated = true;
+
+    this.deathTimer = 0;
+    this.deadAnim.reset();
+  }
+
+  update(dt, player) {
+    if (!Number.isFinite(dt)) return;
+    const d = Math.min(2.0, Math.max(0, dt)); // tighter clamp = weniger jitter
+
+    // ----------------------------
+    // DEAD
+    // ----------------------------
+    if (!this.alive) {
+      this.deathTimer += d;
+      this.deadAnim.update(d);
+      if (this.deathTimer >= this.deathLifetime) this.markedForRemoval = true;
+      return;
+    }
+
+    // timers
+    this.turnCooldown = Math.max(0, this.turnCooldown - d);
+    this.attackCooldown = Math.max(0, this.attackCooldown - d);
+
+    const playerX = player?.x ?? null;
+    const dist = playerX == null ? Infinity : Math.abs(playerX - this.x);
+
+    // ----------------------------
+    // HURT (no movement)
+    // ----------------------------
+    if (this.mode === "hurt") {
+      this.hurtTimer -= d;
+      this.hurtAnim.update(d);
+
+      if (this.hurtTimer <= 0) {
+        this.hurtTimer = 0;
+        this.mode = "walk";
+      }
+      return;
+    }
+
+    // ----------------------------
+    // ATTACK (kick) - no movement (optional tiny lunge)
+    // ----------------------------
+    if (this.mode === "attack") {
+      this.attackTimer -= d;
+      this.attackAnim.update(d);
+
+      // optional: tiny lunge forward during the hit window (feels like kick)
+      if (this.isAttacking()) {
+        const lunge = 0.9; // tweak 0.6..1.4
+        this.x += this.direction * lunge * d;
+      }
+
+      if (this.attackTimer <= 0) {
+        this.attackTimer = 0;
+        this.attackCooldown = this.attackCooldownMax;
+        this.mode = "walk";
+        this.attackAnim.reset(); // wichtig: nächster Attack startet sauber
+      }
+      return;
+    }
+
+    // ----------------------------
+    // Decide behavior (stand alert vs chase/walk)
+    // ----------------------------
+    const inAlert = dist <= this.alertRange;
+    const inAttack = dist <= this.attackRange;
+
+    // Kick trigger
+    if (inAttack && this.attackCooldown <= 0) {
+      this.startAttack();
+      return;
+    }
+
+    // ✅ Direction: only when player exists AND in alert range
+    if (playerX != null && inAlert) {
+      const deadZone = 28; // px, prevents flip jitter
+      let desired = this.direction;
+
+      if (playerX > this.x + deadZone) desired = 1;
+      else if (playerX < this.x - deadZone) desired = -1;
+
+      if (desired !== this.direction && this.turnCooldown <= 0) {
+        this.direction = desired;
+        this.turnCooldown = this.turnCooldownMax; // set ~14..22 in ctor
+      }
+    }
+
+    // ✅ Movement:
+    // - If player in alert range BUT not in attack range: CHASE (walk)
+    // - Else: PATROL (walk)
+    const shouldMove = !inAlert ? true : dist > this.attackRange + 40;
+
+    if (shouldMove) {
+      // choose speed: patrol vs chase
+      const speed = inAlert ? 1.05 : 0.7; // chase faster than patrol
+      this.x += speed * this.direction * d;
+
+      // ✅ sync walk animation speed with movement (reduces "sliding")
+      // You can tweak these numbers:
+      this.walkAnim.fps = inAlert ? 10 : 6;
+      this.walkAnim.update(d);
+
+      this.mode = "walk"; // moving => always walk
+    } else {
+      // close enough: stop and "threaten"
+      this.mode = "alert";
+      this.alertAnim.update(d);
+    }
+
+    // Patrol clamp (only makes sense when patrolling; still safe)
+    if (this.patrolMinX != null && this.x < this.patrolMinX + this.turnMargin) {
+      this.x = this.patrolMinX + this.turnMargin;
+      if (this.turnCooldown <= 0) {
+        this.direction = 1;
+        this.turnCooldown = this.turnCooldownMax;
+      }
+    } else if (
+      this.patrolMaxX != null &&
+      this.x > this.patrolMaxX - this.turnMargin
+    ) {
+      this.x = this.patrolMaxX - this.turnMargin;
+      if (this.turnCooldown <= 0) {
+        this.direction = -1;
+        this.turnCooldown = this.turnCooldownMax;
+      }
+    }
+  }
+
+  draw(ctx, cameraX = 0) {
+    const screenX = this.x - cameraX;
+    const drawY = this.y - this.h;
+
+    let img = null;
+    if (!this.alive || this.mode === "dead") img = this.deadAnim.image;
+    else if (this.mode === "hurt") img = this.hurtAnim.image;
+    else if (this.mode === "attack") img = this.attackAnim.image;
+    else if (this.mode === "alert") img = this.alertAnim.image;
+    else img = this.walkAnim.image;
+
+    if (!img || !img.complete || img.naturalWidth === 0) return;
+
+    ctx.save();
+    if (this.direction === 1) {
+      ctx.translate(screenX + this.w, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, drawY, this.w, this.h);
+    } else {
+      ctx.drawImage(img, screenX, drawY, this.w, this.h);
+    }
+    ctx.restore();
   }
 }
 

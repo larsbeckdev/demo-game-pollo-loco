@@ -3,8 +3,8 @@ export default class Keyboard {
     this.A = false;
     this.D = false;
     this.SPACE = false;
-    this.SHIFT = false;
-    this.E = false; // add
+    this.ENTER = false;
+    this.E = false;
 
     window.addEventListener("keydown", (e) => this.onKey(e, true));
     window.addEventListener("keyup", (e) => this.onKey(e, false));
@@ -25,14 +25,14 @@ export default class Keyboard {
         this.SPACE = pressed;
         break;
 
-      case "ShiftLeft":
-      case "ShiftRight":
-        this.SHIFT = pressed;
+      // ✅ ENTER statt SHIFT
+      case "Enter":
+        this.ENTER = pressed;
         break;
 
-      case "KeyE": // add
-        this.E = pressed; // add
-        break; // add
+      case "KeyE":
+        this.E = pressed;
+        break;
     }
   }
 
@@ -49,12 +49,12 @@ export default class Keyboard {
     return this.SPACE;
   }
 
+  // ✅ THROW via Enter ODER Mouse
   get THROW() {
-    return this.SHIFT;
+    return this.ENTER || this.MOUSE;
   }
 
   get INTERACT() {
-    // add
-    return this.E; // add
+    return this.E;
   }
 }

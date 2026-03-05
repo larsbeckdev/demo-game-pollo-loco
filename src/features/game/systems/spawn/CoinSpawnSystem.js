@@ -112,29 +112,16 @@ export default class CoinSpawnSystem {
 
   _getCoinLanesY() {
     const world = this.world;
-    const player = world.character;
 
-    // fallback: use groundY if bounds not available
     const groundY = world.groundY ?? 300;
     const coinH = 70;
 
-    let headY = groundY - 220; // safe fallback
+    //  Lanes relativ zum Boden (stabil und easy zu tunen)
+    // Werte sind "coin-top" Positionen
+    const laneA = groundY - 170; // näher am Boden
+    const laneB = groundY - 260; // höher
 
-    // Prefer player's bounds for true "head level"
-    if (player && typeof player.getBounds === "function") {
-      const b = player.getBounds();
-      // b.y is player's TOP in your collision system usage
-      headY = (b?.y ?? headY) + this.config.laneOffsetHead;
-    }
-
-    // Lane A = head level (coin aligned near head)
-    // We place coin so its top sits around headY (feel free to tweak)
-    const laneA = headY;
-
-    // Lane B = one above
-    const laneB = headY - this.config.laneGap;
-
-    // Clamp lanes to stay visible and not too close to ground
+    // Clamp: nicht zu hoch, nicht in den Boden
     const yMax = groundY - this.config.yMaxPaddingFromGround - coinH;
     const clamp = (v) => Math.max(this.config.yMin, Math.min(v, yMax));
 

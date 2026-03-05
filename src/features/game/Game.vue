@@ -1,8 +1,21 @@
+<!-- Game.vue -->
 <template>
   <!-- Game container -->
   <div ref="wrap" class="game-wrap">
     <!-- Render canvas -->
     <canvas ref="canvas" class="game-canvas"></canvas>
+
+    <!-- ✅ Rotate Overlay (nur mobile/touch + portrait) -->
+    <div v-if="showRotateOverlay" class="rotate-overlay">
+      <div class="rotate-card">
+        <div class="rotate-title">
+          Bitte drehe dein Gerät und aktiviere den Vollbildmodus
+        </div>
+        <div class="rotate-sub">
+          Dieses Spiel funktioniert nur im Querformat.
+        </div>
+      </div>
+    </div>
 
     <!-- ✅ HUD (Statusbars) nur im Spiel -->
     <GameHud
@@ -14,31 +27,75 @@
 
     <!-- UI overlay (Buttons oben rechts) -->
     <div class="ui">
-      <n-space :size="8">
-        <!-- Settings button -->
+      <n-space :size="8" align="center">
+        <!-- ✅ Level Anzeige -->
+        <n-tag size="small" round type="info"> Level {{ activeLevel }} </n-tag>
+
         <n-button
           size="small"
           type="primary"
           secondary
           circle
-          @click="openSettings">
-          <n-icon>
-            <Settings />
-          </n-icon>
+          @click="
+            (e) => {
+              e?.currentTarget?.blur?.();
+              openSettings();
+            }
+          ">
+          <n-icon><Settings /></n-icon>
         </n-button>
 
-        <!-- Fullscreen button -->
         <n-button
           size="small"
           type="primary"
           secondary
           circle
-          @click="toggleFullscreen">
-          <n-icon>
-            <Fullscreen />
-          </n-icon>
+          @click="
+            (e) => {
+              e?.currentTarget?.blur?.();
+              toggleFullscreen();
+            }
+          ">
+          <n-icon><Fullscreen /></n-icon>
         </n-button>
       </n-space>
+    </div>
+
+    <!-- ✅ Touch Controls (nur mobile/touch) -->
+    <div v-if="showTouch && screen === 'playing'" class="touch">
+      <div class="touch-left">
+        <button
+          class="touch-btn"
+          @pointerdown.prevent="touchDown('LEFT')"
+          @pointerup.prevent="touchUp('LEFT')"
+          @pointercancel.prevent="touchUp('LEFT')"
+          @pointerleave.prevent="touchUp('LEFT')">
+          <ChevronLeft :size="26" />
+        </button>
+
+        <button
+          class="touch-btn"
+          @pointerdown.prevent="touchDown('RIGHT')"
+          @pointerup.prevent="touchUp('RIGHT')"
+          @pointercancel.prevent="touchUp('RIGHT')"
+          @pointerleave.prevent="touchUp('RIGHT')">
+          <ChevronRight :size="26" />
+        </button>
+      </div>
+
+      <div class="touch-right">
+        <button
+          class="touch-btn touch-btn--big"
+          @pointerdown.prevent="touchTap('JUMP')">
+          <ArrowUp :size="28" />
+        </button>
+
+        <button
+          class="touch-btn touch-btn--big"
+          @pointerdown.prevent="touchTap('THROW')">
+          <BottleWine :size="28" />
+        </button>
+      </div>
     </div>
 
     <!-- ✅ Intro/Outro Overlay -->
@@ -46,7 +103,7 @@
       <div class="screen-stage">
         <img class="screen-image" :src="screenImage" alt="" />
 
-        <div class="screen-actions" @click.stop>
+        <div class="screen-actions" @click.stop="() => {}">
           <!-- Intro: Start -->
           <template v-if="screen === 'intro'">
             <n-button
@@ -54,24 +111,72 @@
               secondary
               type="secondary"
               size="large"
-              @click="startGame">
+              @click="
+                (e) => {
+                  e?.currentTarget?.blur?.();
+                  startGame();
+                }
+              ">
               Start
             </n-button>
           </template>
 
-          <!-- Win / Lose: Restart + Exit -->
+          <!-- Win / Lose -->
           <template v-else>
             <n-space vertical :size="12" align="center">
+              <!-- Only on WIN and not final: next level button -->
               <n-button
+                v-if="screen === 'win' && !winIsFinal"
                 class="start-button"
+                type="primary"
+                size="large"
+                @click="
+                  (e) => {
+                    e?.currentTarget?.blur?.();
+                    nextLevel();
+                  }
+                ">
+                Nächstes Level
+              </n-button>
+
+              <!-- Final win label (Level 4) -->
+              <div
+                v-if="screen === 'win' && winIsFinal"
+                style="
+                  font-weight: 700;
+                  font-size: 20px;
+                  color: white;
+                  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+                ">
+                Gewonnen 🎉
+              </div>
+
+              <!-- Always available on end screens -->
+              <n-button
+                class="restart-button"
                 secondary
                 type="secondary"
                 size="large"
-                @click="restartGame">
+                @click="
+                  (e) => {
+                    e?.currentTarget?.blur?.();
+                    restartGame();
+                  }
+                ">
                 Nochmal
               </n-button>
 
-              <n-button size="large" type="default" @click="exitToHome">
+              <n-button
+                class="exit-button"
+                size="small"
+                secondary
+                type="secondary"
+                @click="
+                  (e) => {
+                    e?.currentTarget?.blur?.();
+                    exitToHome();
+                  }
+                ">
                 Verlassen
               </n-button>
             </n-space>
@@ -112,6 +217,7 @@
         </div>
 
         <n-space justify="end" :size="8">
+          <!-- ✅ CHANGE: normaler Close-Button bleibt "mit Resume" -->
           <n-button @click="closeSettings"> Schließen </n-button>
 
           <!-- ✅ Restart & Exit NUR während des Spiels -->
@@ -132,7 +238,14 @@
 import { ref, computed, onMounted, onBeforeUnmount, onActivated } from "vue";
 import { useRouter } from "vue-router";
 import Game from "@/features/game/core/Game.js";
-import { Fullscreen, Settings } from "lucide-vue-next";
+import {
+  Fullscreen,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUp,
+  BottleWine,
+} from "lucide-vue-next";
 import GameHud from "@/features/game/ui/hud/GameHud.vue";
 
 const DEBUG = false;
@@ -142,13 +255,87 @@ function debugLog(...args) {
 }
 
 const router = useRouter();
-
 const wrap = ref(null);
 const canvas = ref(null);
 let game = null;
 
-const screen = ref("intro");
+/* ============================================================================
+  MObile touch controls
+============================================================================ */
 
+const showTouch = ref(false);
+
+function detectTouch() {
+  showTouch.value = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+}
+
+const isPortrait = ref(false);
+
+function updateOrientation() {
+  // sicherste Variante: viewport vergleichen
+  isPortrait.value = window.innerHeight > window.innerWidth;
+}
+
+const showRotateOverlay = computed(() => {
+  // nur auf Touch-Geräten zeigen + nur im Portrait
+  return showTouch.value && isPortrait.value;
+});
+
+function setKey(action, value) {
+  ensureGame();
+  const kb = game?.keyboardInput;
+  if (!kb) return;
+
+  switch (action) {
+    case "LEFT":
+      kb.A = value;
+      break;
+    case "RIGHT":
+      kb.D = value;
+      break;
+    case "JUMP":
+      kb.SPACE = value;
+      break;
+    case "THROW":
+      kb.ENTER = value;
+      break;
+    case "INTERACT":
+      kb.E = value;
+      break;
+  }
+}
+
+function touchDown(flag) {
+  if (screen.value !== "playing") return;
+  setKey(flag, true);
+}
+
+function touchUp(flag) {
+  setKey(flag, false);
+}
+
+function touchTap(flag) {
+  if (screen.value !== "playing") return;
+
+  // kurzer Impuls (damit justPressed im ThrowSystem funktioniert)
+  setKey(flag, true);
+  setTimeout(() => setKey(flag, false), 40);
+}
+
+/* ============================================================================
+  Screen State
+============================================================================ */
+const screen = ref("intro"); // intro | playing | win | lose
+
+/* ============================================================================
+  Win info + Level label
+============================================================================ */
+const winIsFinal = ref(false);
+const activeLevel = ref(1);
+
+/* ============================================================================
+  HUD Stats
+============================================================================ */
 const hudStats = ref({
   health: 100,
   coins: 0,
@@ -156,9 +343,38 @@ const hudStats = ref({
   boss: 100,
 });
 
+function syncLevelLabel() {
+  if (!game) return;
+  if (typeof game.getLevelNumber === "function")
+    activeLevel.value = game.getLevelNumber();
+  else activeLevel.value = (game.levelIndex ?? 0) + 1;
+
+  if (DEBUG) {
+    console.log(
+      "%c[UI] ACTIVE LEVEL",
+      "color:gold;font-weight:bold;",
+      activeLevel.value,
+    );
+  }
+}
+
 function syncHud() {
   const stats = game?.gameWorld?.stats;
-  if (!stats) return;
+  if (!stats) {
+    if (DEBUG)
+      console.warn("[HUD] no stats at game.gameWorld.stats", game?.gameWorld); // ✅ CHANGE
+    return;
+  }
+
+  if (DEBUG) {
+    // ✅ CHANGE
+    console.log("[HUD] read stats", {
+      health: stats.health,
+      coins: stats.coins,
+      bottles: stats.bottles,
+      boss: stats.boss,
+    });
+  }
 
   hudStats.value = {
     health: stats.health ?? 100,
@@ -166,10 +382,15 @@ function syncHud() {
     bottles: stats.bottles ?? 100,
     boss: stats.boss ?? 100,
   };
+
+  syncLevelLabel();
 }
 
+/* ============================================================================
+  Settings Modal
+============================================================================ */
 const showSettings = ref(false);
-const selectedLevel = ref(2);
+const selectedLevel = ref(1);
 
 const levelOptions = [
   { label: "Level 1", value: 1 },
@@ -179,35 +400,53 @@ const levelOptions = [
 ];
 
 function openSettings() {
+  pauseGameForSettings();
   showSettings.value = true;
 }
+
 function closeSettings() {
   showSettings.value = false;
+  resumeGameFromSettings();
 }
+
+/* ✅ CHANGE: "silent close" ohne Resume (für Restart/Exit/Next) */
+function closeSettingsSilent() {
+  // ✅ CHANGE
+  showSettings.value = false; // ✅ CHANGE
+} // ✅ CHANGE
 
 function applySelectedLevel() {
   if (screen.value === "playing") return;
 
   const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
 
+  ensureGame();
   if (typeof game?.loadLevel === "function") {
     game.loadLevel(idx);
     debugLog("[UI] Level loaded via game.loadLevel()", { idx });
   }
 
+  winIsFinal.value = false;
   screen.value = "intro";
+
   syncHud();
   closeSettings();
 }
 
+/* ============================================================================
+  Overlay Images
+============================================================================ */
 const screenImage = computed(() => {
   if (screen.value === "intro")
     return "/images/9_intro_outro_screens/start/startscreen_1.png";
   if (screen.value === "win")
-    return "/images/9_intro_outro_screens/You won, you lost/You Win A.png";
-  return "/images/9_intro_outro_screens/You won, you lost/You lost.png";
+    return "/images/9_intro_outro_screens/You won, you lost/YouWinA.png";
+  return "/images/9_intro_outro_screens/You won, you lost/YouLost.png";
 });
 
+/* ============================================================================
+  Fullscreen
+============================================================================ */
 function toggleFullscreen() {
   const el = wrap.value;
   if (!el) return;
@@ -215,9 +454,9 @@ function toggleFullscreen() {
   else document.exitFullscreen();
 }
 
-/* =========================================================
-  ✅ NEW: hard cleanup helper (prevents half-dead instances)
-========================================================= */
+/* ============================================================================
+  Cleanup
+============================================================================ */
 function destroyGame() {
   try {
     game?.stop?.();
@@ -231,9 +470,9 @@ function destroyGame() {
   game = null;
 }
 
-/* =========================================================
-  ✅ NEW: ensure game exists (fixes "frozen after exit")
-========================================================= */
+/* ============================================================================
+  Ensure game exists
+============================================================================ */
 function ensureGame() {
   if (game) return;
 
@@ -245,7 +484,7 @@ function ensureGame() {
 
   game = new Game(c);
 
-  // keep selected level in sync
+  // selectedLevel -> initial load
   if (typeof game?.loadLevel === "function") {
     const idx = Math.max(0, Math.min(3, (selectedLevel.value ?? 1) - 1));
     game.loadLevel(idx);
@@ -253,56 +492,111 @@ function ensureGame() {
 
   game.__hudInterval = setInterval(syncHud, 100);
 
-  game.onWin = () => {
+  // ✅ onWin: Game.js lädt ggf. schon next level, wir zeigen nur Screen
+  game.onWin = ({ isFinal } = {}) => {
+    winIsFinal.value = !!isFinal;
     screen.value = "win";
-    game?.stop?.();
-    debugLog("[UI] WIN -> screen=win");
+    syncLevelLabel(); // nach auto-load stimmt das Label sofort
+    debugLog("[UI] WIN", { isFinal, activeLevel: activeLevel.value });
   };
 
   game.onLose = () => {
+    winIsFinal.value = false;
     screen.value = "lose";
-    game?.stop?.();
-    debugLog("[UI] LOSE -> screen=lose");
+    debugLog("[UI] LOSE");
   };
 
   syncHud();
+  syncLevelLabel();
   debugLog("[UI] ensureGame() created");
 }
 
-/* =========================================================
-  Start / Restart
-========================================================= */
+/* ============================================================================
+  Start / Restart / Next
+============================================================================ */
 function startGame() {
-  // ✅ if you exited before, game might be null
   ensureGame();
 
+  game?.gameWorld?.sound?.play?.("gameStart");
+  winIsFinal.value = false;
   screen.value = "playing";
 
-  // allow world to run
   if (game?.gameWorld) game.gameWorld.state = "playing";
 
+  syncLevelLabel();
   game?.start?.();
-  debugLog("[UI] startGame()");
+
+  debugLog("[UI] startGame()", { level: activeLevel.value });
 }
 
 function restartGame() {
-  closeSettings();
+  // ✅ CHANGE: NICHT closeSettings() (würde resume starten), sondern silent
+  closeSettingsSilent(); // ✅ CHANGE
 
-  // ✅ always rebuild a clean instance
   destroyGame();
   ensureGame();
 
+  winIsFinal.value = false;
   screen.value = "playing";
+
   if (game?.gameWorld) game.gameWorld.state = "playing";
+
+  syncLevelLabel();
   game?.start?.();
 
-  debugLog("[UI] restartGame()");
+  debugLog("[UI] restartGame()", { level: activeLevel.value });
 }
 
+/* ✅ Button soll NUR starten (Level ist bereits geladen durch Game.js) */
+function nextLevel() {
+  // ✅ CHANGE: NICHT closeSettings() (würde resume starten), sondern silent
+  closeSettingsSilent(); // ✅ CHANGE
+
+  // game exists, next level is already loaded
+  winIsFinal.value = false;
+  screen.value = "playing";
+
+  if (game?.gameWorld) game.gameWorld.state = "playing";
+
+  syncLevelLabel();
+  game?.start?.();
+
+  debugLog("[UI] nextLevel() START", { level: activeLevel.value });
+}
+
+/* ============================================================================
+  Pause / Resume (Settings)
+============================================================================ */
+
+function pauseGameForSettings() {
+  // nur pausieren, wenn gerade gespielt wird
+  if (screen.value !== "playing") return;
+  if (!game?.gameWorld) return;
+
+  game.gameWorld.state = "paused";
+  game.stop?.(); // loop stoppen (spart CPU, keine Inputs)
+  debugLog("[UI] PAUSE (settings)");
+}
+
+function resumeGameFromSettings() {
+  // nur fortsetzen, wenn wir im playing screen sind
+  if (screen.value !== "playing") return;
+  if (!game?.gameWorld) return;
+
+  game.gameWorld.state = "playing";
+  game.start?.(); // loop wieder an
+  debugLog("[UI] RESUME (settings)");
+}
+
+/* ============================================================================
+  Exit to Home
+============================================================================ */
 async function exitToHome() {
-  closeSettings();
+  // ✅ CHANGE: NICHT closeSettings() (würde resume starten), sondern silent
+  closeSettingsSilent(); // ✅ CHANGE
 
   destroyGame();
+  winIsFinal.value = false;
   screen.value = "intro";
 
   if (document.fullscreenElement) {
@@ -311,7 +605,6 @@ async function exitToHome() {
     } catch {}
   }
 
-  // ✅ navigate safely (use your real route name OR "/" directly)
   try {
     await router.push({ name: "home" });
   } catch {
@@ -321,46 +614,54 @@ async function exitToHome() {
   debugLog("[UI] exitToHome()");
 }
 
-/* =========================================================
+/* ============================================================================
   Lifecycle
-========================================================= */
+============================================================================ */
 onMounted(() => {
-  // only create once on first mount
   ensureGame();
+
+  detectTouch();
+  updateOrientation();
+
+  const onResize = () => {
+    detectTouch();
+    updateOrientation();
+  };
+
+  window.addEventListener("resize", onResize);
+  window.addEventListener("orientationchange", onResize);
+
   debugLog("[UI] mounted -> waiting on intro");
 });
 
-// ✅ IMPORTANT if the route/view is KeepAlive cached:
 onActivated(() => {
-  // when coming back from home, ensure game exists again
   ensureGame();
   debugLog("[UI] activated -> ensureGame()");
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("resize", detectTouch);
+
   destroyGame();
   debugLog("[UI] beforeUnmount -> cleaned up");
 });
 </script>
 
 <style scoped>
-/* Wrapper styles */
 .game-wrap {
   position: relative;
   width: 100%;
 }
 
-/* Canvas styles */
 .game-canvas {
   width: 100%;
   aspect-ratio: 16 / 9;
   display: block;
   background: var(--ds-card-bg);
-  border: 1px solid var(--ds-border);
+  /* border: 1px solid var(--ds-border); */
   border-radius: 8px;
 }
 
-/* HUD layer (oben links) */
 .hud-layer {
   position: absolute;
   top: 12px;
@@ -369,7 +670,6 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-/* UI overlay (Buttons oben rechts) */
 .ui {
   position: absolute;
   top: 12px;
@@ -377,7 +677,6 @@ onBeforeUnmount(() => {
   z-index: 50;
 }
 
-/* Screen overlay */
 .screen-overlay {
   position: absolute;
   inset: 0;
@@ -387,14 +686,12 @@ onBeforeUnmount(() => {
   background: var(--ds-overlay);
 }
 
-/* Stage is relative container for image + actions */
 .screen-stage {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-/* Image fills stage */
 .screen-image {
   position: absolute;
   inset: 0;
@@ -404,7 +701,6 @@ onBeforeUnmount(() => {
   display: block;
 }
 
-/* Button overlay */
 .screen-actions {
   position: absolute;
   inset: 0;
@@ -412,17 +708,23 @@ onBeforeUnmount(() => {
   place-items: center;
 }
 
-.start-button {
+.start-button,
+.again-button,
+.next-button,
+.exit-button,
+.restart-button {
   padding: 12px 36px;
-  font-size: 1.25rem;
   color: #fff;
 }
 
-.start-button:hover {
+.start-button:hover,
+.again-button:hover,
+.next-button:hover,
+.exit-button:hover,
+.restart-button:hover {
   color: #fff;
 }
 
-/* Optional: readability layer */
 .screen-actions::before {
   content: "";
   position: absolute;
@@ -436,7 +738,6 @@ onBeforeUnmount(() => {
   z-index: 1;
 }
 
-/* Fullscreen wrapper */
 .game-wrap:fullscreen {
   width: 100vw;
   height: 100vh;
@@ -444,11 +745,101 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
-/* Fullscreen canvas */
 .game-wrap:fullscreen .game-canvas {
   width: 100%;
   height: 100%;
   aspect-ratio: auto;
   border-radius: 0;
+}
+
+/* touch  */
+.touch-btn svg {
+  stroke-width: 2.5;
+}
+
+.touch-btn--big svg {
+  stroke-width: 2.8;
+}
+
+.touch {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.touch-left,
+.touch-right {
+  position: absolute;
+  bottom: 14px;
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.touch-left {
+  left: 14px;
+}
+
+.touch-right {
+  right: 14px;
+}
+
+.touch-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-btn--big {
+  width: 64px;
+  height: 64px;
+}
+
+/* turn device  */
+.rotate-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.rotate-card {
+  width: 90%;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: rgba(20, 20, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+  color: #fff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.rotate-title {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.2px;
+}
+
+.rotate-sub {
+  margin-top: 8px;
+  opacity: 0.85;
+  font-size: 13px;
 }
 </style>

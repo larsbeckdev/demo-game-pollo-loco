@@ -13,74 +13,60 @@ import ParallaxLayer from "@/features/game/rendering/ParallaxLayer.js";
 ============================================================================ */
 
 export default class Background {
-  /* ==========================================================================
-    Constructor
-    - Creates all parallax layers
-    - Order matters: first element is farthest in the background
-  ========================================================================== */
-
   constructor() {
-    /* ------------------------------------------------------------------------
-      Layers array
-      - The first layer is the farthest (moves slowest)
-      - The last layer is the closest (moves fastest)
-      - speed defines how strong the layer reacts to camera movement
-    ------------------------------------------------------------------------ */
-
     this.layers = [
-      /* ----------------------------------------------------------------------
-        Clouds (very far background)
-        - Moves slowly for depth effect
-      ---------------------------------------------------------------------- */
+      // ----------------------------------------------------------------------
+      // Air (almost static base layer)
+      // - If your air.png should behave like a "sky gradient", keep it nearly static.
+      // - We still tile it, but with better seam-hiding in ParallaxLayer.
+      // ----------------------------------------------------------------------
       new ParallaxLayer({
-        src: "/images/5_background/layers/4_clouds/full.png",
-        speed: 0.15,
+        src: "/images/5_background/layers/air.png",
+        speed: 0,
+        autoSpeed: 0, // air does not drift (optional: 0.02 for subtle wind)
+        overlap: 0, // ✅ stronger overlap helps remove seams
       }),
 
-      /* ----------------------------------------------------------------------
-        Third layer (distant background)
-      ---------------------------------------------------------------------- */
+      // ----------------------------------------------------------------------
+      // Clouds (auto-moving layer)
+      // - autoSpeed makes them move even when player stands still
+      // ----------------------------------------------------------------------
+      new ParallaxLayer({
+        src: "/images/5_background/layers/4_clouds/full.png",
+        speed: 0.05,
+        autoSpeed: 0.25, // ✅ tweak: 0.12 .. 0.6
+        overlap: 6,
+      }),
+
       new ParallaxLayer({
         src: "/images/5_background/layers/3_third_layer/full.png",
         speed: 0.35,
+        autoSpeed: 0, // no self movement
+        overlap: 4,
       }),
 
-      /* ----------------------------------------------------------------------
-        Second layer (mid background)
-      ---------------------------------------------------------------------- */
       new ParallaxLayer({
         src: "/images/5_background/layers/2_second_layer/full.png",
         speed: 0.6,
+        autoSpeed: 0,
+        overlap: 4,
       }),
 
-      /* ----------------------------------------------------------------------
-        First layer (foreground background)
-        - Moves almost like the game world
-      ---------------------------------------------------------------------- */
       new ParallaxLayer({
         src: "/images/5_background/layers/1_first_layer/full.png",
         speed: 1.0,
+        autoSpeed: 0,
+        overlap: 3,
       }),
     ];
   }
 
-  /* ==========================================================================
-    draw
-    - Draws all layers in order
-    - ctx: canvas 2D rendering context
-    - canvasWidth: width of the canvas
-    - canvasHeight: height of the canvas
-    - cameraX: horizontal camera offset
-  ========================================================================== */
-
-  draw(ctx, canvasWidth, canvasHeight, cameraX = 0) {
-    /* ------------------------------------------------------------------------
-      Iterate over all layers
-      - Each layer applies its own parallax calculation
-      - Layers are drawn back to front
-    ------------------------------------------------------------------------ */
+  // ✅ dt optional: if you don't pass it, default 1
+  draw(ctx, canvasWidth, canvasHeight, cameraX = 0, dt = 1) {
+    const d = Number.isFinite(dt) ? dt : 1;
 
     for (const layer of this.layers) {
+      layer.update?.(d);
       layer.draw(ctx, canvasWidth, canvasHeight, cameraX);
     }
   }

@@ -15,6 +15,17 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/impressum",
+    component: DefaultLayout,
+    children: [
+      {
+        path: "/impressum",
+        name: "impressum",
+        component: () => import("@/pages/legal/Imprint.vue"),
+      },
+    ],
+  },
 ];
 
 export const router = createRouter({

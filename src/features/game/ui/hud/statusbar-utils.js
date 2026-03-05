@@ -1,7 +1,10 @@
 export function snapPercentToStep(value) {
   const v = Math.max(0, Math.min(100, Number(value) || 0));
   const steps = [0, 20, 40, 60, 80, 100];
-  return steps.reduce((best, s) => (Math.abs(s - v) < Math.abs(best - v) ? s : best), 100);
+  return steps.reduce(
+    (best, s) => (Math.abs(s - v) < Math.abs(best - v) ? s : best),
+    100,
+  );
 }
 
 export function healthBarSrc(percent, color = "orange") {

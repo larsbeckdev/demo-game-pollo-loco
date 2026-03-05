@@ -105,4 +105,32 @@ import {
 .content-inner {
   padding: 24px 16px;
 }
+
+.layout-content {
+  position: relative; /* wichtig fürs Overlay */
+  background: url("/images/wallpaper.png") center / cover no-repeat;
+}
+
+@media (orientation: portrait) {
+  :deep(.n-scrollbar-content) {
+    min-height: calc(100vh - var(--header-h) - var(--footer-h));
+    display: flex;
+    justify-content: center;
+    margin-top: 20%;
+  }
+}
+
+.layout-content::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  /* dark vignette */
+  background: radial-gradient(
+    circle at center,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.65) 100%
+  );
+}
 </style>
