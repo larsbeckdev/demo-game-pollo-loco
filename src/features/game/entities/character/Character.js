@@ -47,6 +47,10 @@ export default class Character {
     this.idleTimer = 0;
     this.longIdleAfter = 180;
 
+    // verhindert long_idle direkt nach Schaden
+    this.longIdleLockTimer = 0;
+    this.longIdleLockDuration = 120; // ~2 Sekunden
+
     // Animations
     this.animations = createCharacterAnimations();
     this.currentAnimationKey = "idle";
@@ -204,6 +208,12 @@ export default class Character {
   update(deltaTimeInFrames = 1) {
     const dbg = this._dbg;
 
+    // long idle lock timer runterzählen
+    if (this.longIdleLockTimer > 0) {
+      this.longIdleLockTimer -= deltaTimeInFrames;
+      if (this.longIdleLockTimer < 0) this.longIdleLockTimer = 0;
+    }
+
     // --- physics start snapshot (optional, not logged every frame) ---
     // if (dbg.enabled) console.log("[Character] update dt:", deltaTimeInFrames);
 
@@ -321,8 +331,11 @@ export default class Character {
         animKey = "walk";
       } else {
         this.idleTimer += deltaTimeInFrames;
-        this.state =
-          this.idleTimer >= this.longIdleAfter ? "long_idle" : "idle";
+
+        const longIdleAllowed =
+          this.longIdleLockTimer <= 0 && this.idleTimer >= this.longIdleAfter;
+
+        this.state = longIdleAllowed ? "long_idle" : "idle";
         animKey = this.state;
       }
     }
@@ -388,6 +401,10 @@ export default class Character {
     this.hurtTimer = this.hurtDuration;
 
     this.vx = 0;
+
+    // verhindert sofortiges long idle nach Schaden
+    this.idleTimer = 0;
+    this.longIdleLockTimer = this.longIdleLockDuration;
 
     if (this._dbg.enabled) {
       console.log("[Character] took damage", {
@@ -466,19 +483,21 @@ export default class Character {
   canThrowBottle() {
     if (this.dead) return false;
     if (this.hurtActive) return false;
-    if (this.state === "long_idle") return false; // ✅ block in long idle
-    return true;
+    return true; // long_idle wird nicht mehr geblockt
   }
 
-  // Optional: beim ersten Throw-Press nur "aufwecken"
   wakeUpFromLongIdle() {
     if (this.state !== "long_idle") return false;
 
-    // reset long idle immediately
+    // ✅ wake up
     this.idleTimer = 0;
+
+    // ✅ verhindert, dass er sofort wieder einschläft
+    this.longIdleLockTimer = this.longIdleLockDuration;
+
     this.state = "idle";
     this.play("idle");
-    return true; // ✅ was long idle -> woke up
+    return true;
   }
 
   // =====================================================

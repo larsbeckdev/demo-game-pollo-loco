@@ -165,6 +165,14 @@ class EnemyBase {
     this.speed = speed;
     this.direction = direction;
 
+    // =========================
+    // CHASE CONFIG (NEW)
+    // =========================
+    this.aggro = false; // merkt sich, ob er den Player "gesehen" hat
+    this.aggroDist = 650; // ab hier sieht er den Player
+    this.loseDist = 900; // ab hier verliert er ihn wieder
+    this.stopDist = 45; // so nah bleibt er stehen (kein reindrücken)
+
     this.damage = damage;
 
     this.patrolMinX = patrolMinX;
@@ -211,7 +219,7 @@ class EnemyBase {
     }
   }
 
-  update(dt) {
+  update(dt, character) {
     if (!Number.isFinite(dt)) {
       console.warn("[Enemy] dt invalid:", dt);
       return;
@@ -253,7 +261,39 @@ class EnemyBase {
       return;
     }
 
-    // Movement
+    // =====================================================
+    // CHASE (NEW): if player in range, run towards player
+    // =====================================================
+    const playerX = character?.x ?? null;
+
+    if (playerX !== null) {
+      const dist = Math.abs(playerX - this.x);
+
+      // acquire / lose aggro
+      if (!this.aggro && dist <= this.aggroDist) this.aggro = true;
+      if (this.aggro && dist >= this.loseDist) this.aggro = false;
+
+      if (this.aggro) {
+        // always face + run towards player
+        const dir = playerX > this.x ? 1 : -1;
+
+        // stop close to player (prevents constant pushing)
+        if (dist > this.stopDist) {
+          this.direction = dir;
+          this.x += this.speed * this.direction * dt;
+        }
+
+        // animation (still walk anim while chasing)
+        this.walkAnim.update(dt);
+
+        // ✅ IMPORTANT: skip patrol while chasing
+        return;
+      }
+    }
+
+    // -----------------------------------------------------
+    // PATROL (old behavior)
+    // -----------------------------------------------------
     this.x += this.speed * this.direction * dt;
 
     // Patrol flip
@@ -261,14 +301,6 @@ class EnemyBase {
       this.direction = 1;
     if (this.patrolMaxX !== null && this.x > this.patrolMaxX)
       this.direction = -1;
-
-    if (this._dbg.enabled && this.direction !== this._dbg.lastDirection) {
-      console.log(`[Enemy#${this._dbg.id}] DIRECTION FLIP`, {
-        newDirection: this.direction,
-        x: Number(this.x.toFixed(1)),
-      });
-      this._dbg.lastDirection = this.direction;
-    }
 
     // Throttled move log (max 1x / 1.5s)
     if (this._dbg.enabled) {
@@ -483,6 +515,16 @@ class BossChicken extends EnemyBase {
     this.maxHp = hp;
     this.hp = hp;
 
+    // =========================
+    // BOSS AGGRO / CHASE
+    // =========================
+    this.aggro = false;
+    this.aggroRange = 900; // Boss sieht Pepe früher
+    this.loseAggroRange = 1600; // verliert Fokus fast nie
+    this.chaseSpeed = 1.35; // deutlich stärker als aktuell
+    this.patrolSpeed = 0.55; // im Idle langsamer
+    this.stopDist = 70; // bleibt nicht direkt auf Pepe kleben
+
     // anti flip-jitter
     this.turnCooldown = 0;
     this.turnCooldownMax = 18; // statt 10
@@ -597,7 +639,7 @@ class BossChicken extends EnemyBase {
 
   update(dt, player) {
     if (!Number.isFinite(dt)) return;
-    const d = Math.min(2.0, Math.max(0, dt)); // tighter clamp = weniger jitter
+    const d = Math.min(2.0, Math.max(0, dt));
 
     // ----------------------------
     // DEAD
@@ -617,7 +659,20 @@ class BossChicken extends EnemyBase {
     const dist = playerX == null ? Infinity : Math.abs(playerX - this.x);
 
     // ----------------------------
-    // HURT (no movement)
+    // AGGRO acquire / lose
+    // ----------------------------
+    if (playerX != null) {
+      if (!this.aggro && dist <= this.aggroRange) {
+        this.aggro = true;
+      }
+
+      if (this.aggro && dist >= this.loseAggroRange) {
+        this.aggro = false;
+      }
+    }
+
+    // ----------------------------
+    // HURT
     // ----------------------------
     if (this.mode === "hurt") {
       this.hurtTimer -= d;
@@ -625,98 +680,102 @@ class BossChicken extends EnemyBase {
 
       if (this.hurtTimer <= 0) {
         this.hurtTimer = 0;
-        this.mode = "walk";
+        this.mode = this.aggro ? "alert" : "walk";
       }
       return;
     }
 
     // ----------------------------
-    // ATTACK (kick) - no movement (optional tiny lunge)
+    // ATTACK
     // ----------------------------
     if (this.mode === "attack") {
       this.attackTimer -= d;
       this.attackAnim.update(d);
 
-      // optional: tiny lunge forward during the hit window (feels like kick)
+      // kleiner Vorstoß während des Schlages
       if (this.isAttacking()) {
-        const lunge = 0.9; // tweak 0.6..1.4
+        const lunge = 1.1;
         this.x += this.direction * lunge * d;
       }
 
       if (this.attackTimer <= 0) {
         this.attackTimer = 0;
         this.attackCooldown = this.attackCooldownMax;
-        this.mode = "walk";
-        this.attackAnim.reset(); // wichtig: nächster Attack startet sauber
+        this.mode = this.aggro ? "alert" : "walk";
+        this.attackAnim.reset();
       }
       return;
     }
 
-    // ----------------------------
-    // Decide behavior (stand alert vs chase/walk)
-    // ----------------------------
-    const inAlert = dist <= this.alertRange;
-    const inAttack = dist <= this.attackRange;
+    // --------------------------------------------------
+    // OHNE AGGRO: langsame Patrol
+    // --------------------------------------------------
+    if (!this.aggro || playerX == null) {
+      this.mode = "walk";
+      this.x += this.patrolSpeed * this.direction * d;
+      this.walkAnim.fps = 6;
+      this.walkAnim.update(d);
 
-    // Kick trigger
+      if (
+        this.patrolMinX != null &&
+        this.x < this.patrolMinX + this.turnMargin
+      ) {
+        this.x = this.patrolMinX + this.turnMargin;
+        if (this.turnCooldown <= 0) {
+          this.direction = 1;
+          this.turnCooldown = this.turnCooldownMax;
+        }
+      } else if (
+        this.patrolMaxX != null &&
+        this.x > this.patrolMaxX - this.turnMargin
+      ) {
+        this.x = this.patrolMaxX - this.turnMargin;
+        if (this.turnCooldown <= 0) {
+          this.direction = -1;
+          this.turnCooldown = this.turnCooldownMax;
+        }
+      }
+
+      return;
+    }
+
+    // --------------------------------------------------
+    // MIT AGGRO: Boss fokussiert Pepe dauerhaft
+    // --------------------------------------------------
+
+    // Blickrichtung stabil setzen
+    const deadZone = 24;
+    let desired = this.direction;
+
+    if (playerX > this.x + deadZone) desired = 1;
+    else if (playerX < this.x - deadZone) desired = -1;
+
+    if (desired !== this.direction && this.turnCooldown <= 0) {
+      this.direction = desired;
+      this.turnCooldown = this.turnCooldownMax;
+    }
+
+    const inAttack = dist <= this.attackRange;
+    const inStop = dist <= this.stopDist;
+
+    // Angriff triggern
     if (inAttack && this.attackCooldown <= 0) {
       this.startAttack();
       return;
     }
 
-    // ✅ Direction: only when player exists AND in alert range
-    if (playerX != null && inAlert) {
-      const deadZone = 28; // px, prevents flip jitter
-      let desired = this.direction;
-
-      if (playerX > this.x + deadZone) desired = 1;
-      else if (playerX < this.x - deadZone) desired = -1;
-
-      if (desired !== this.direction && this.turnCooldown <= 0) {
-        this.direction = desired;
-        this.turnCooldown = this.turnCooldownMax; // set ~14..22 in ctor
-      }
-    }
-
-    // ✅ Movement:
-    // - If player in alert range BUT not in attack range: CHASE (walk)
-    // - Else: PATROL (walk)
-    const shouldMove = !inAlert ? true : dist > this.attackRange + 40;
-
-    if (shouldMove) {
-      // choose speed: patrol vs chase
-      const speed = inAlert ? 1.05 : 0.7; // chase faster than patrol
-      this.x += speed * this.direction * d;
-
-      // ✅ sync walk animation speed with movement (reduces "sliding")
-      // You can tweak these numbers:
-      this.walkAnim.fps = inAlert ? 10 : 6;
-      this.walkAnim.update(d);
-
-      this.mode = "walk"; // moving => always walk
-    } else {
-      // close enough: stop and "threaten"
+    // Wenn nah dran, Druck aufbauen / drohen
+    if (inStop) {
       this.mode = "alert";
       this.alertAnim.update(d);
+      return;
     }
 
-    // Patrol clamp (only makes sense when patrolling; still safe)
-    if (this.patrolMinX != null && this.x < this.patrolMinX + this.turnMargin) {
-      this.x = this.patrolMinX + this.turnMargin;
-      if (this.turnCooldown <= 0) {
-        this.direction = 1;
-        this.turnCooldown = this.turnCooldownMax;
-      }
-    } else if (
-      this.patrolMaxX != null &&
-      this.x > this.patrolMaxX - this.turnMargin
-    ) {
-      this.x = this.patrolMaxX - this.turnMargin;
-      if (this.turnCooldown <= 0) {
-        this.direction = -1;
-        this.turnCooldown = this.turnCooldownMax;
-      }
-    }
+    // Sonst aggressiv chase
+    this.mode = "walk";
+    this.x += this.chaseSpeed * this.direction * d;
+    this.walkAnim.fps = 10;
+    this.walkAnim.update(d);
   }
 
   draw(ctx, cameraX = 0) {

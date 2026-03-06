@@ -53,6 +53,8 @@ export default class World {
     // -----------------------------------------------------
     this.stats = new StatsStore({ health: 100 });
     this.sound = new SoundManager();
+    const muted = localStorage.getItem("game_muted") === "true";
+    this.sound.setMuted?.(muted);
     this._playedDeathSfx = false;
     this.sound.register("gameStart", "/audio/game/gameStart.mp3", {
       volume: 0.7,

@@ -70,9 +70,8 @@ export default class ThrowSystem {
         // first press in long_idle only wakes the player, no throw yet
         if (typeof c.wakeUpFromLongIdle === "function") {
           const wokeUp = c.wakeUpFromLongIdle();
-          if (wokeUp) {
-            this.updateSystem.update(dt);
-            return;
+          if (typeof c.wakeUpFromLongIdle === "function") {
+            c.wakeUpFromLongIdle(); // nicht returnen!
           }
         }
 

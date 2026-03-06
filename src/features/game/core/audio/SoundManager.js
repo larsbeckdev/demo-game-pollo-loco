@@ -1,28 +1,72 @@
-// core/audio/SoundManager.js
 export default class SoundManager {
   constructor() {
-    this.sounds = new Map();
+    this.sounds = {}; // key -> { src, volume, audio? }
+    this.muted = false; // ✅ global mute
+    this.masterVolume = 1; // ✅ optional global volume (0..1)
   }
 
-  register(key, src, { volume = 1 } = {}) {
-    const a = new Audio(src);
-    a.volume = volume;
-    a.preload = "auto";
-    this.sounds.set(key, a);
+  setMuted(value) {
+    this.muted = !!value;
+
+    // falls Audios schon existieren: direkt anwenden
+    for (const s of Object.values(this.sounds)) {
+      if (!s?.audio) continue;
+      s.audio.muted = this.muted;
+      s.audio.volume = this.muted ? 0 : (s.volume ?? 1) * this.masterVolume;
+    }
+  }
+
+  setMasterVolume(value) {
+    this.masterVolume = Math.max(0, Math.min(1, Number(value) || 1));
+    // direkt anwenden
+    for (const s of Object.values(this.sounds)) {
+      if (!s?.audio) continue;
+      s.audio.volume = this.muted ? 0 : (s.volume ?? 1) * this.masterVolume;
+    }
+  }
+
+  register(key, src, opts = {}) {
+    this.sounds[key] = {
+      src,
+      volume: opts.volume ?? 1,
+      loop: !!opts.loop,
+      audio: null,
+    };
   }
 
   play(key) {
-    const base = this.sounds.get(key);
-    if (!base) return;
+    const s = this.sounds[key];
+    if (!s) return;
 
-    // ✅ Clone erlaubt Overlap (coin-collect spam, hits, etc.)
-    const a = base.cloneNode(true);
-    a.volume = base.volume;
-    a.play().catch(() => {});
+    // Audio lazy anlegen
+    if (!s.audio) {
+      s.audio = new Audio(s.src);
+      s.audio.preload = "auto";
+    }
+
+    // ✅ wichtig: JEDES play wendet mute + volume an
+    s.audio.loop = !!s.loop;
+    s.audio.muted = this.muted;
+    s.audio.volume = this.muted ? 0 : (s.volume ?? 1) * this.masterVolume;
+
+    // optional: immer von vorne starten
+    try {
+      s.audio.currentTime = 0;
+    } catch {}
+
+    s.audio.play?.().catch(() => {});
   }
 
-  // optional: falls du später alles stummschalten willst
-  setVolumeAll(v) {
-    for (const a of this.sounds.values()) a.volume = v;
+  stop(key) {
+    const s = this.sounds[key];
+    if (!s?.audio) return;
+    s.audio.pause?.();
+    try {
+      s.audio.currentTime = 0;
+    } catch {}
+  }
+
+  stopAll() {
+    for (const k of Object.keys(this.sounds)) this.stop(k);
   }
 }

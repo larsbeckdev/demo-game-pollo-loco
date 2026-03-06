@@ -26,11 +26,31 @@
       color="orange" />
 
     <!-- UI overlay (Buttons oben rechts) -->
+    <!-- UI overlay (Buttons oben rechts) -->
     <div class="ui">
       <n-space :size="8" align="center">
-        <!-- ✅ Level Anzeige -->
         <n-tag size="small" round type="info"> Level {{ activeLevel }} </n-tag>
 
+        <!-- ✅ Mute -->
+        <n-button
+          size="small"
+          type="primary"
+          secondary
+          circle
+          :title="isMuted ? 'Sound an' : 'Sound aus'"
+          @click="
+            (e) => {
+              e?.currentTarget?.blur?.();
+              toggleMute();
+            }
+          ">
+          <n-icon>
+            <VolumeX v-if="isMuted" />
+            <Volume2 v-else />
+          </n-icon>
+        </n-button>
+
+        <!-- Settings -->
         <n-button
           size="small"
           type="primary"
@@ -45,6 +65,7 @@
           <n-icon><Settings /></n-icon>
         </n-button>
 
+        <!-- Fullscreen -->
         <n-button
           size="small"
           type="primary"
@@ -101,7 +122,13 @@
     <!-- ✅ Intro/Outro Overlay -->
     <div v-if="screen !== 'playing'" class="screen-overlay">
       <div class="screen-stage">
-        <img class="screen-image" :src="screenImage" alt="" />
+        <img
+          class="screen-image"
+          :src="screenImage"
+          alt=""
+          @error="
+            (e) => console.warn('[screenImage] failed:', screenImage, e)
+          " />
 
         <div class="screen-actions" @click.stop="() => {}">
           <!-- Intro: Start -->
@@ -147,9 +174,7 @@
                   font-size: 20px;
                   color: white;
                   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-                ">
-                Gewonnen 🎉
-              </div>
+                "></div>
 
               <!-- Always available on end screens -->
               <n-button
@@ -187,11 +212,16 @@
 
     <!-- ✅ Settings Modal (Fullscreen-safe via :to="wrap") -->
     <n-modal
-      v-model:show="showSettings"
+      :show="showSettings"
       preset="card"
       title="Einstellungen"
+      closable
+      :mask-closable="true"
+      :close-on-esc="true"
       :to="wrap"
-      :style="{ width: '420px' }">
+      :style="{ width: '420px' }"
+      @update:show="handleSettingsShowUpdate"
+      @close="handleSettingsClose">
       <n-space vertical :size="14">
         <div>
           <div style="font-weight: 600; margin-bottom: 6px">Level</div>
@@ -235,7 +265,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, onActivated } from "vue";
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+  onActivated,
+  watch,
+} from "vue";
 import { useRouter } from "vue-router";
 import Game from "@/features/game/core/Game.js";
 import {
@@ -245,6 +282,8 @@ import {
   ChevronRight,
   ArrowUp,
   BottleWine,
+  Volume2,
+  VolumeX,
 } from "lucide-vue-next";
 import GameHud from "@/features/game/ui/hud/GameHud.vue";
 
@@ -258,6 +297,81 @@ const router = useRouter();
 const wrap = ref(null);
 const canvas = ref(null);
 let game = null;
+
+/* ============================================================================
+  Mute (robust)
+============================================================================ */
+
+const isMuted = ref(localStorage.getItem("game_muted") === "true");
+
+// merkt sich vorherige Lautstärke pro Element
+function setGlobalMediaMuted(muted) {
+  const els = Array.from(document.querySelectorAll("audio, video"));
+
+  for (const el of els) {
+    if (!el) continue;
+
+    // volume merken (nur wenn nicht schon gemerkt)
+    if (el.dataset && el.dataset.prevVol == null) {
+      el.dataset.prevVol = String(el.volume ?? 1);
+    }
+
+    el.muted = muted;
+
+    // manche Browser ignorieren muted bei bestimmten Setups -> Volume als Backup
+    if (muted) {
+      el.volume = 0;
+      el.pause?.(); // optional: stoppt direkt
+    } else {
+      const prev = el.dataset?.prevVol;
+      el.volume = prev != null ? Number(prev) : 1;
+    }
+  }
+}
+
+function hookSoundSystem() {
+  const sound = game?.gameWorld?.sound;
+  if (!sound || sound.__muteHooked) return;
+
+  sound.__muteHooked = true;
+
+  // falls es sounds als Map/Object gibt: sofort muten
+  if (sound.sounds && typeof sound.sounds === "object") {
+    for (const a of Object.values(sound.sounds)) {
+      if (a && "muted" in a) a.muted = isMuted.value;
+      if (a && "volume" in a) a.volume = isMuted.value ? 0 : (a.volume ?? 1);
+    }
+  }
+
+  // Hook: jedes play setzt danach den Mute-Zustand (für lazy-created audio)
+  if (typeof sound.play === "function") {
+    const origPlay = sound.play.bind(sound);
+    sound.play = (...args) => {
+      const res = origPlay(...args);
+      // nach play erneut anwenden, damit neue Audio-Instanzen direkt gemutet sind
+      applyMuteToGame();
+      return res;
+    };
+  }
+}
+
+function applyMuteToGame() {
+  const sound = game?.gameWorld?.sound;
+  if (!sound) return;
+
+  if (typeof sound.setMuted === "function") {
+    sound.setMuted(isMuted.value);
+  }
+}
+
+function toggleMute() {
+  isMuted.value = !isMuted.value;
+  localStorage.setItem("game_muted", String(isMuted.value));
+  applyMuteToGame();
+}
+
+// wenn sich isMuted ändert (z.B. initial), sofort anwenden
+watch(isMuted, () => applyMuteToGame(), { immediate: true });
 
 /* ============================================================================
   MObile touch controls
@@ -400,13 +514,35 @@ const levelOptions = [
 ];
 
 function openSettings() {
-  pauseGameForSettings();
-  showSettings.value = true;
+  setSettingsOpen(true);
 }
 
 function closeSettings() {
+  setSettingsOpen(false);
+}
+
+function setSettingsOpen(nextOpen) {
+  // nichts tun, wenn sich nichts ändert
+  if (showSettings.value === nextOpen) return;
+
+  // Öffnen
+  if (nextOpen) {
+    pauseGameForSettings();
+    showSettings.value = true;
+    return;
+  }
+
+  // Schließen
   showSettings.value = false;
   resumeGameFromSettings();
+}
+
+function handleSettingsShowUpdate(value) {
+  setSettingsOpen(value);
+}
+
+function handleSettingsClose() {
+  setSettingsOpen(false);
 }
 
 /* ✅ CHANGE: "silent close" ohne Resume (für Restart/Exit/Next) */
@@ -437,11 +573,19 @@ function applySelectedLevel() {
   Overlay Images
 ============================================================================ */
 const screenImage = computed(() => {
-  if (screen.value === "intro")
-    return "/images/9_intro_outro_screens/start/startscreen_1.png";
-  if (screen.value === "win")
-    return "/images/9_intro_outro_screens/You won, you lost/YouWinA.png";
-  return "/images/9_intro_outro_screens/You won, you lost/YouLost.png";
+  const base = import.meta.env.BASE_URL;
+
+  const folder = "images/You_won_you_lost";
+  const intro = `${base}images/9_intro_outro_screens/start/startscreen_1.png`;
+  const winNormal = `${base}${folder}/YouWinA.png`;
+  const winFinal = `${base}${folder}/YouwonA.png`;
+  const lose = `${base}${folder}/YouLost.png`;
+
+  let raw = intro;
+  if (screen.value === "win") raw = winIsFinal.value ? winFinal : winNormal;
+  if (screen.value === "lose") raw = lose;
+
+  return encodeURI(raw);
 });
 
 /* ============================================================================
@@ -483,6 +627,9 @@ function ensureGame() {
   c.height = 450;
 
   game = new Game(c);
+
+  hookSoundSystem();
+  applyMuteToGame();
 
   // selectedLevel -> initial load
   if (typeof game?.loadLevel === "function") {
@@ -841,5 +988,16 @@ onBeforeUnmount(() => {
   margin-top: 8px;
   opacity: 0.85;
   font-size: 13px;
+}
+
+/* screenimage  */
+.screen-image {
+  position: absolute;
+  /* top: 50%; */
+  /* left: 50%; */
+  width: 100%;
+  height: 100%;
+  /* transform: translate(-50%, -50%); */
+  object-fit: contain;
 }
 </style>

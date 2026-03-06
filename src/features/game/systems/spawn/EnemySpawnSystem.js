@@ -10,16 +10,20 @@ function randInt(min, max) {
 function randFloat(min, max) {
   return Math.random() * (max - min) + min;
 }
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
 
 export default class EnemySpawnSystem {
   constructor(world) {
     this.world = world;
 
-    // list of x-positions to spawn across the level
     this.points = [];
     this.nextIndex = 0;
 
-    // time gating (keeps it organic)
     this.timer = 0;
     this.nextIn = 60;
 
@@ -31,50 +35,103 @@ export default class EnemySpawnSystem {
     return this.world.level?.enemySpawn ?? null;
   }
 
-  _scheduleNext() {
+  _progress01() {
     const cfg = this._cfg();
+    if (!cfg) return 0;
+
+    const startX = cfg.startX ?? 400;
+    const endX = cfg.endX ?? 5200;
+
+    const playerX = this.world.character?.x ?? 0;
+    const t = (playerX - startX) / Math.max(1, endX - startX);
+    return clamp01(t);
+  }
+
+  _scaledCfg() {
+    const cfg = this._cfg();
+    if (!cfg) return null;
+
+    // progress 0..1
+    const p = this._progress01();
+
+    // 🔥 Schwierigkeit steigt zum Ende hin
+    // Du kannst die Kurve hier steuern:
+    const curve = p * p; // quadratic: am Anfang sanft, am Ende steiler
+
+    // Intervalle werden kürzer (mehr Druck)
+    const intervalMin = Math.round(
+      lerp(cfg.intervalMin ?? 45, (cfg.intervalMin ?? 45) * 0.65, curve),
+    );
+    const intervalMax = Math.round(
+      lerp(cfg.intervalMax ?? 120, (cfg.intervalMax ?? 120) * 0.7, curve),
+    );
+
+    // maxAlive steigt Richtung Ende
+    const maxAliveBase = cfg.maxAlive ?? 6;
+    const maxAlive = Math.round(lerp(maxAliveBase, maxAliveBase + 3, curve));
+
+    // Spawn Ahead (nutzt endlich deine Config)
+    const spawnAheadMin = cfg.spawnAheadMin ?? 500;
+    const spawnAheadMax = cfg.spawnAheadMax ?? 1100;
+    const spawnAhead = Math.round(randFloat(spawnAheadMin, spawnAheadMax));
+
+    // Enemy variety: leicht steigern (optional)
+    const smallChance = lerp(0.25, 0.45, curve);
+
+    return {
+      ...cfg,
+      intervalMin,
+      intervalMax,
+      maxAlive,
+      spawnAhead,
+      smallChance,
+    };
+  }
+
+  _scheduleNext() {
+    const cfg = this._scaledCfg();
     if (!cfg) {
       this.nextIn = 999999;
       return;
     }
-    this.nextIn = randInt(cfg.intervalMin ?? 45, cfg.intervalMax ?? 120);
+    this.nextIn = randInt(cfg.intervalMin, cfg.intervalMax);
   }
 
   _initPoints() {
     const cfg = this._cfg();
     this.points = [];
     this.nextIndex = 0;
-
     if (!cfg) return;
 
     const startX = cfg.startX ?? 400;
     const endX = cfg.endX ?? 5200;
 
-    // Heuristik: wie viele Gegner insgesamt über die Strecke?
-    // (kannst du später als cfg.countMin/Max ergänzen, wenn du willst)
     const length = Math.max(0, endX - startX);
-    const approx = Math.round(length / 300); // ~ alle 300px ein Spawnpunkt
-    const count = Math.max(10, Math.min(28, approx));
 
-    // Abstand zwischen Spawnpunkten, damit es nicht clustert
-    const minGap = 240;
+    // ✅ gleichmäßiger: count aus Länge + Zielabstand
+    // Level werden dadurch “fairer” vergleichbar
+    const targetSpacing = 320; // ~ alle 320px ein Spawnpunkt
+    const count = Math.max(
+      12,
+      Math.min(34, Math.round(length / targetSpacing)),
+    );
 
-    // optional: Boss-Zone meiden
+    // ✅ nicht zu nah clustern, aber nicht zu leer
+    const minGap = 260;
+
     const bossX = this.world.level?.boss?.x ?? null;
     const noSpawnRadius = 450;
 
     const points = [];
     let safety = 0;
 
-    while (points.length < count && safety < count * 80) {
+    while (points.length < count && safety < count * 120) {
       safety++;
 
       const x = Math.floor(randFloat(startX + 150, endX - 150));
 
-      // boss area block
       if (bossX !== null && Math.abs(x - bossX) < noSpawnRadius) continue;
 
-      // minGap
       let ok = true;
       for (const px of points) {
         if (Math.abs(px - x) < minGap) {
@@ -88,11 +145,9 @@ export default class EnemySpawnSystem {
     }
 
     points.sort((a, b) => a - b);
-
     this.points = points;
   }
 
-  // Optional: call when you load a new level / new world
   reset() {
     this.timer = 0;
     this._initPoints();
@@ -100,46 +155,39 @@ export default class EnemySpawnSystem {
   }
 
   update(dt) {
-    const cfg = this._cfg();
+    const cfg = this._scaledCfg();
     if (!cfg) return;
     if (this.world.state !== "playing") return;
 
     const aliveCount = this.world.enemies.filter((e) => e.alive).length;
-    if (aliveCount >= (cfg.maxAlive ?? 6)) return;
+    if (aliveCount >= cfg.maxAlive) return;
 
     if (this.nextIndex >= this.points.length) return;
 
-    const playerX = this.world.character?.x ?? 0;
-
-    // ✅ schneller spawnen (weniger warten)
     this.timer += dt;
     if (this.timer < this.nextIn) return;
 
-    // ✅ Viewport/Offscreen-Info
+    const playerX = this.world.character?.x ?? 0;
+
+    // Viewport
     const camX = this.world.camera?.x ?? 0;
     const viewW = this.world.canvas?.width ?? 800;
 
-    // ✅ Offscreen Margin: damit man es nie sieht
+    // ✅ Offscreen Margin (nie sichtbar)
     const offscreenPad = 220;
-
-    // ✅ Spawn erst, wenn player nahe genug dran ist, ABER so,
-    // dass wir definitiv rechts außerhalb des Screens spawnen.
-    const triggerAhead = 1800; // vorher 1000 → deutlich früher triggern
-    const plannedX = this.points[this.nextIndex];
-
-    if (playerX + triggerAhead < plannedX) return;
-
-    // ✅ erzwinge offscreen rechts: mindestens "rechts vom Bildschirm"
     const minOffscreenX = camX + viewW + offscreenPad;
 
-    // ✅ spawnX ist max(plannedX, offscreen-rechts)
-    // (so bleibt die Verteilung grob erhalten, aber ohne Pop-in)
+    // ✅ trigger: nutze spawnAhead aus cfg (statt fix 1800)
+    const plannedX = this.points[this.nextIndex];
+
+    // Spawn erst, wenn player nahe genug dran ist
+    if (playerX + cfg.spawnAhead < plannedX) return;
+
+    // Offscreen rechts erzwingen
     const spawnX = Math.max(plannedX, minOffscreenX);
 
-    // choose enemy type (optional variety)
-    const smallChance = 0.35;
     const EnemyClass =
-      Math.random() < smallChance ? ChickenSmall : ChickenNormal;
+      Math.random() < cfg.smallChance ? ChickenSmall : ChickenNormal;
 
     this.world.enemies.push(
       new EnemyClass({
@@ -154,7 +202,6 @@ export default class EnemySpawnSystem {
     this.nextIndex++;
     this.timer = 0;
 
-    // ✅ kürzere nächste Wartezeit, damit "mehr los" ist
     this._scheduleNext();
   }
 }
